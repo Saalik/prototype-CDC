@@ -10,5 +10,5 @@ while (True):
     if(inputNbShard.isnumeric()):
         break
     print(inputNbShard+" is not a valid entry")
-
+assert inputNbShard > 0
 dbManager = Manager(inputNbShard)

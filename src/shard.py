@@ -31,8 +31,12 @@ class Shard:
             self.highWatermark = 0
             self.lowWatermark = 0
 
+        assert self.lowWatermark <= self.highWatermark
+
         self.receive()
 
+    def checkInvariants():
+        assert lowWatermark <= highWatermark
 
     def receive(self):
         msgRecv = None
@@ -68,6 +72,7 @@ class Shard:
                 assert value != None
                 message = (self.shardID, transactionID, "Read", key, value)
                 coordinator.send(message)
+                fo
 
             elif messageType == "Prepare":
                 # Parsing the rest of the message 
@@ -98,9 +103,20 @@ class Shard:
  
 
     def updateHigh( newValue ):
+        assert lowWatermark <= highWatermark
         with self._lock:
             if (self.highWatermark < lsn):
                 self.highWatermark = lsn
+        assert lowWatermark <= highWatermark
+
+    def updateLow( newValue ):
+        assert lowWatermark <= highWatermark
+        with self._lock:
+            if self.lowWatermark < newValue:
+                self.lowWatermark = newValue
+        assert lowWatermark <= highWatermark
+
+    
         
 # Message format expected for an update
 # # { TransactionID, Type, Key, operation, Dependency }

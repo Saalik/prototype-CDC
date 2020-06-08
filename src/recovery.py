@@ -22,6 +22,8 @@
 # Disclaimer: This first version will do one task at time 
 # No effort in optimization is present in this work
 
+initValue = "PLACEHOLDER_WATERMARK"
+
 def recovery(journal):
 
 # First we initialize the variables we will return
@@ -29,8 +31,8 @@ def recovery(journal):
     checkpointTime = 0
 
     # High and low watermarks
-    highWatermark = -1
-    lowWatermark = -1
+    highWatermark = initValue
+    lowWatermark = initValue
 
     # TransactionIDs sets 
     committed = set()
