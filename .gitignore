@@ -17,3 +17,8 @@ src/log-api/journal/committed/0000000000000005
 src/log-api/journal/committed/0000000000000006
 src/log-api/logs/id_high
 src/log-api/logs/id_low
+src/journal/id_high
+src/journal/committed/0000000000000000
+src/journal/committed/0000000000000001
+src/journal/committed/0000000000000002
+src/journal/committed/0000000000000003

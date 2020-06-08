@@ -25,11 +25,4 @@ fmt = '%d:%s:%s:%s'
 low = l.id_low
 high = l.id_high
 assert low <= high
-record = fmt % (current_time(), trId, "Begin", "dependency")
-n = l.append(record)
-
-l.flush()
-assert l.get()
-assert l.get(n) == record
-assert l.get(low-1) is None
 
