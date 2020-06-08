@@ -209,19 +209,40 @@ Each of these records contains these entries:
   \item \textbf{Log Sequence Number (LSN):} A unique monotonically increasing 
   sequence number
   \item \textbf{Timestamp}: Real-time timestamp 
+  \item \textbf{TransactionID:} a transaction identifier 
   \item \textbf{Type:} system operation, transaction operation
+\end{compactitem}
+Depending on the type of the operation the following information is included
+in the record:
+\begin{compactitem}
   \item \textbf{Key:} reffered object key
   \item \textbf{Operation:} referred object and its arguments or the system 
-  operation
-\end{compactitem}
-If the record is a transaction operation or update operation, then we have the
-following additional  information:
-\begin{compactitem}
-  \item \textbf{TransactionID:} a transaction identifier 
   \item \textbf{Dependency:} CVT of the snapshot the transaction is reading from
+  \item \textbf{ListOfParticipants:} participants in a given transaction
+  \item \textbf{CommitTime:} commit time of a transaction
 \end{compactitem}
 
+These are the different Type of operation:
 
+\begin{compactitem}
+\item \textbf{Begin:} system record that marks the beginning of a
+transaction. 
+It contains the Timestamp, TransactionID, Type, followed by the Dependency.
+This record is written once per transaction to each shard
+participating.
+\item \textbf{Prepare:} system record that is written by shards during the two-phase commit. 
+It contains the Timestamp, TransactionID, Type, followed by the ListOfParticipants.
+The Timestamp in this context is the clock proposed by the shard as the commit time.
+\item \textbf{Commit:} system record that contains the commit time sent by the coordinator
+to the shards once the two phase protocol is finished.
+It contains the Timestamp, TransactionID, Type, CommitTime.
+The commit time is sent to the shard by the transaction Coordinator.
+\item \textbf{Abort:} system record that marks the abortion of a transaction.
+It contains the Timestamp, TransactionID, Type, ListOfParticipants.
+\item \textbf{Update:} transaction record containing the update operation on a given
+object.
+It contains Timestamp, TransactionID, Type, Key, Operation.
+\end{compactitem}
 
 
 \subsection{Checkpoint store}
