@@ -72,7 +72,6 @@ class Shard:
                 assert value != None
                 message = (self.shardID, transactionID, "Read", key, value)
                 coordinator.send(message)
-                fo
 
             elif messageType == "Prepare":
                 # Parsing the rest of the message 

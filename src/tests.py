@@ -84,5 +84,7 @@ if userInput == "y":
         elif command[0] == "flush":
             l.flush()
             print("Records flushed")
+        elif command[0] == "truncate":
+            l.truncate(low)
         else:
             print("Wrong format")

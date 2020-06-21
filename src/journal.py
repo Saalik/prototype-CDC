@@ -26,3 +26,22 @@ low = l.id_low
 high = l.id_high
 assert low <= high
 
+def low():
+    return low
+
+def high():
+    return high
+
+def syncAppend(record):
+    l.append()
+    return None
+
+def asyncAppend(record):
+    return None
+
+def get(id):
+    return None
+
+def getRange(beginID, lastID)
+    return None
+
