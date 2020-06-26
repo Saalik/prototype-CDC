@@ -46,7 +46,6 @@ def get(id):
     todo("journal.py-get(id) not impemented")
     return rawRecord
 
-def getRange(beginID, lastID)
+def getRange(beginID, lastID):
     todo("journal.py-getRange not impemented")
     return None
-

@@ -22,3 +22,7 @@ src/journal/committed/0000000000000000
 src/journal/committed/0000000000000001
 src/journal/committed/0000000000000002
 src/journal/committed/0000000000000003
+.vscode/settings.json
+src/log-api/rainbowfs/__pycache__/__init__.cpython-38.pyc
+src/log-api/rainbowfs/__pycache__/logger.cpython-38.pyc
+.vscode/settings.json
