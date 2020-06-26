@@ -27,7 +27,7 @@ fmt = '%d %s %s %s %s'
 
 lowWatermark = l.id_low
 highWatermark = l.id_high
-assert low <= high
+assert lowWatermark <= highWatermark
 record = fmt % (current_time(), trId, "Begin", "dependency", " ")
 n = l.append(record)
 
@@ -35,9 +35,9 @@ l.flush()
 assert l.get(n) == record
 assert l.get(lowWatermark-1) is None
 assert l.get(highWatermark+1) is None
-assert low <= high
+assert lowWatermark <= highWatermark
 
-for i in range(low, high):
+for i in range(lowWatermark, highWatermark):
     assert l.get(i) is not None
 
 userInput = input("Do you wish to launch interactive mode? y/N ")
