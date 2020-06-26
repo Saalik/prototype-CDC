@@ -4,6 +4,7 @@ import datetime
 import time
 
 from rainbowfs.logger import Logger
+from utile import todo
 
 journal = logging.getLogger()
 journal.setLevel(logging.INFO)
@@ -33,15 +34,19 @@ def high():
     return high
 
 def syncAppend(record):
-    l.append()
+    todo("journal.py-syncAppend not impemented")
     return None
 
 def asyncAppend(record):
+    todo("journal.py-asyncAppend not impemented")
     return None
 
 def get(id):
-    return None
+    rawRecord = l.get(id)
+    todo("journal.py-get(id) not impemented")
+    return rawRecord
 
 def getRange(beginID, lastID)
+    todo("journal.py-getRange not impemented")
     return None
 
