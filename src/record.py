@@ -6,6 +6,7 @@ import sys
 
 acceptedMessageTypes = ["Begin","Update","Prepare","Commit","Abort"]
 
+
 @dataclass
 class Record:
     timestamp: int = None

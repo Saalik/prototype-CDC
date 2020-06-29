@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from journal import getLow, getHigh, append, flush, get
+from journal import getLow, getHigh, append, flush, get, getRange
 from record import Record
 
 print(getLow())
@@ -20,4 +20,6 @@ flush()
 print(getHigh())
 readRec = get(id)
 assert rec == readRec
+
+getRange(getHigh(), getLow())
 

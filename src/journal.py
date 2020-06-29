@@ -99,17 +99,18 @@ def get(id):
     return record
 
 def getRange(firstID, lastID):
-    assert firstID < lastID
-    assert firstID > lowWatermark()
-    assert firstID < highWatermark()
-    assert lastID > lowWatermark()
-    assert lastID < highWatermark()  
+    # assert firstID < lastID
+    # assert firstID > lowWatermark()
+    # assert firstID < highWatermark()
+    # assert lastID > lowWatermark()
+    # assert lastID < highWatermark()  
 
     listOfRecords = []
     for i in range (firstID,lastID+1):
         entry = log.get(i)
         record = Record()
         record.fromEntry(entry)
+        print(record)
         listOfRecords.append(record)
     return listOfRecords
 

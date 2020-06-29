@@ -129,4 +129,4 @@ class Shard:
 # Message format expected for the Prepare message
 # # { Transaction ID, "Prepare", List of Participants, Dependency }
 # Accept message sent in the following format
-# # { Participant ID, Transaction ID, Message, Value }
+# # { Participant ID, Transaction ID, Message, Value
