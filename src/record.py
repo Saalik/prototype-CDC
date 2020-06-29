@@ -4,20 +4,27 @@ import pprint
 import time
 import sys
 
+acceptedMessageTypes = ["Begin","Update","Prepare","Commit","Abort"]
 
 @dataclass
 class Record:
-    timestamp: Any = None
-    messageType: Any = None
+    timestamp: int = None
+    messageType: str = None
     transactionID: int = None
     key: str = None
     operation: str = None
-    dependency: str = None
+    dependency: int = None
     listOfParticipants: Any = None
     commitTime: Any = None
 
+    # self.acceptedMessageType = ["Begin","Update","Prepare","Commit","Abort"]
+
     def setTimestamp(self):
         self.timestamp = int(round(time.time() * 1000))
+    
+    def setMessageType(self, messageType):
+        assert messageType in acceptedMessageTypes
+        self.messageType = messageType
     
     def toJournalEntry(self):
         entry = ""
@@ -29,7 +36,6 @@ class Record:
             sys.stderr.write("No transactionID in record, quitting \n")
             assert False
         entry = entry + " " + str(self.transactionID)
-        
         if self.messageType == None:
             sys.stderr.write("No message type in record, quitting \n")
             assert False
@@ -40,7 +46,7 @@ class Record:
         if self.operation != None:
             entry = entry + " " + self.operation
         if self.dependency != None:
-            entry = entry + " " + self.dependency
+            entry = entry + " " + str(self.dependency)
         if self.listOfParticipants != None:
             entry = entry + " " + self.listOfParticipants
         if self.commitTime != None:
@@ -50,12 +56,13 @@ class Record:
 
     def fromEntry (self, entry):
         information = entry.split()
-        self.timestamp = information.pop(0)
-        self.transactionID = information.pop(0)
+        self.timestamp = int(information.pop(0))
+        self.transactionID = int(information.pop(0))
         self.messageType = information.pop(0)
+        assert self.messageType in acceptedMessageTypes
 
         if self.messageType == "Begin":
-            self.dependency = information.pop(0)
+            self.dependency = int(information.pop(0))
         
         elif self.messageType == "Update":
             self.key = information.pop(0)

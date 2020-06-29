@@ -2,7 +2,7 @@ import logging
 import sys
 import datetime
 import time
-
+sys.path.insert(1, 'log-api')
 from rainbowfs.logger import Logger
 from utile import todo
 from record import Record
@@ -22,22 +22,25 @@ current_time = lambda: int(round(time.time() * 1000))
 
 fmt = '%d %s %s %s %s'
 
-lowWatermark = log.id_low
-highWatermark = log.id_high
-assert lowWatermark <= highWatermark
+lowWatermark = lambda: log.id_low
+highWatermark = lambda: log.id_high
+assert lowWatermark() <= highWatermark()
 
 def getLow():
-    return lowWatermark
+    return lowWatermark()
 
 def getHigh():
-    return highWatermark
+    return highWatermark()
 
-def Append(record, sync=False):
+def append(record, sync=False):
     record.setTimestamp()
-    log.append(record.toJournalEntry)
+    id = log.append(record.toJournalEntry())
     if sync == True:
         log.flush()
+    return id
 
+def flush():
+    log.flush()
 
     # if record.messageType == "Begin":
     #     entry = fmt % (current_time(), record.transactionID,
@@ -88,8 +91,8 @@ def Append(record, sync=False):
     # return None
 
 def get(id):
-    assert id > lowWatermark
-    assert id < highWatermark
+    assert id > lowWatermark()
+    assert id < highWatermark()
     entry = log.get(id)
     record = Record()
     record.fromEntry(entry)
@@ -97,10 +100,10 @@ def get(id):
 
 def getRange(firstID, lastID):
     assert firstID < lastID
-    assert firstID > lowWatermark
-    assert firstID < highWatermark
-    assert lastID > lowWatermark
-    assert lastID < highWatermark  
+    assert firstID > lowWatermark()
+    assert firstID < highWatermark()
+    assert lastID > lowWatermark()
+    assert lastID < highWatermark()  
 
     listOfRecords = []
     for i in range (firstID,lastID+1):
@@ -108,4 +111,18 @@ def getRange(firstID, lastID):
         record = Record()
         record.fromEntry(entry)
         listOfRecords.append(record)
+    return listOfRecords
+
+def truncate():
+    todo("Implementation TBD \n Implemented on in lower level")
+
+def getByKey(key):
+    todo("Work in progress\n No commit check")
+    listOfRecords = []
+    for i in range (firstID,lastID+1):
+        entry = log.get(i)
+        record = Record()
+        record.fromEntry(entry)
+        if record.messageType == "Update" and record.key == key:
+            listOfRecords.append(record)
     return listOfRecords
