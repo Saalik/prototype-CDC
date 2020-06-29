@@ -73,4 +73,42 @@ class Record:
         else:
             assert False
 
+    def checkFormatCorrectness(self):
+        if self.timestamp == None:
+            return False
+        if self.transactionID == None:
+            return False
+        if self.messageType == None:
+            return False
+        
+        if self.messageType == "Begin":
+            if self.dependency == None:
+                return False
+            else:
+                return True
+        
+        elif self.messageType == "Update":
+            if self.key == None or self.operation == None:
+                return False
+            else:
+                return True
+        
+        elif self.messageType == "Prepare":
+            if self.dependency == None or self.listOfParticipants == None:
+                return False
+            else:
+                return True
+
+        elif self.messageType == "Commit":
+            if self.commitTime == None:
+                return False
+            else:
+                return True
+        
+        elif self.messageType == "Abort":
+            return True
+        
+        else:
+            return False
+
 
