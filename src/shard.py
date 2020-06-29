@@ -1,8 +1,8 @@
 import socket
 import twopc
 import select
-import recovery
-from time import clock
+from recovery import *
+import time
 import coordinator
 from logging import log
 from manager import Manager
@@ -21,7 +21,7 @@ class Shard:
         #print("Shard "+str(id)+" starting intialization")
         #self.dcManager = dcManager
         #dcManager.testConnection("This is "+str(id))
-        journalName = "journal"+id
+        journal = "journal"+id
         self.journal = journal.get()
         if not (journal == journal.empty()):
             self.recoveryInformation = recovery.recovery(journal)
@@ -35,8 +35,8 @@ class Shard:
 
         self.receive()
 
-    def checkInvariants():
-        assert lowWatermark <= highWatermark
+    # def checkInvariants():
+    #     assert lowWatermark <= highWatermark
 
     def receive(self):
         msgRecv = None
@@ -55,13 +55,13 @@ class Shard:
 
             if messageType == "Begin":
                 dependency = msgRecv[4]
-                log.asyncLog( transactionID, "Begin", clock() )
+                log.asyncLog( transactionID, "Begin" )
 
             elif messageType == "Update":
                 key = msgRecv[2]
                 operation = msgRecv[3]
                 dependency = msgRecv[4]    
-                log.asyncLog( transactionID, "Update", clock(), key, operation, None )
+                log.asyncLog( transactionID, "Update", key, operation, None )
             
 
             elif messageType == "Read":
@@ -78,14 +78,14 @@ class Shard:
                 listOfParticipants = msgRecv[2]
                 dependency = msgRecv[3]
 
-                lsn = log.syncLog( transactionID , "Prepare", clock(),
-                listOfParticipants, dependency )
+                lsn = log.syncLog( transactionID , "Prepare",
+                dependency, listOfParticipants )
                 if lsn:
                     updateHigh(lsn)
-                    acceptMessage = ( self.shardID, transactionID, "Accept", clock() )
+                    acceptMessage = ( self.shardID, transactionID, "Accept" )
                     coordinator.send(acceptMessage)
                 else:
-                    abortMessage = (self.shardID, transactionID, "Abort", clock() )
+                    abortMessage = (self.shardID, transactionID, "Abort" )
                     coordinator.send(abortMessage)
                 
             elif messageType == "Commit":
@@ -95,7 +95,7 @@ class Shard:
 
 
             elif messageType == "Abort":
-                log.asyncLog( transactionID , "Abort", clock())
+                log.asyncLog( transactionID , "Abort")
 
             else :
                 assert False

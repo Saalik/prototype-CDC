@@ -4,6 +4,7 @@ import logging
 import sys
 import datetime
 import time
+from record import Record
 
 sys.path.insert(1, 'log-api')
 from rainbowfs.logger import Logger
@@ -73,7 +74,8 @@ if userInput == "y":
                 int(command[1])
             except ValueError:
                 print(command[1]+" is not a valid option")
-            l.get(int(command[1]))
+            record = l.get(int(command[1]))
+            print(record)
         elif command[0] == "append":
             if len(command) >= 4:
                 record = fmt % (current_time(), command[1], command[2], command[3], 
@@ -85,6 +87,6 @@ if userInput == "y":
             l.flush()
             print("Records flushed")
         elif command[0] == "truncate":
-            l.truncate(low)
+            l.truncate(lowWatermark)
         else:
             print("Wrong format")
