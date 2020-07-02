@@ -98,12 +98,7 @@ def get(id):
     record.fromEntry(entry)
     return record
 
-def getRange(firstID, lastID):
-    # assert firstID < lastID
-    # assert firstID > lowWatermark()
-    # assert firstID < highWatermark()
-    # assert lastID > lowWatermark()
-    # assert lastID < highWatermark()  
+def getRange(firstID, lastID):    
 
     listOfRecords = []
     for i in range (firstID,lastID+1):
