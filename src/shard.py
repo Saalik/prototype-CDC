@@ -7,6 +7,12 @@ import coordinator
 from logging import log
 from manager import Manager
 from utile import todo
+from journal import get
+from journal import getLow
+from journal import getHigh
+from journal import append
+from record import Record
+
 
 class Shard:
 
@@ -50,19 +56,21 @@ class Shard:
             else:
                 interdc.sendHeartbeat(self.ShardID)
                 continue
-            transactionID = msgRecv[0]
+            trID = msgRecv[0]
             messageType = msgRecv[1]
 
             if messageType == "Begin":
                 dependency = msgRecv[4]
-                log.asyncLog( transactionID, "Begin" )
+                record = Record(messageType="Begin", transactionID=trID)
+                append(record)
 
             elif messageType == "Update":
                 key = msgRecv[2]
                 operation = msgRecv[3]
                 dependency = msgRecv[4]    
-                log.asyncLog( transactionID, "Update", key, operation, None )
-            
+                record = Record(transactionID=trID, messageType="Update", key= key, 
+                operation= operation, dependency = dependency)
+                append(record)
 
             elif messageType == "Read":
                 key = msgRecv[2]
@@ -70,7 +78,7 @@ class Shard:
 
                 value = cache.get(key, dependency)
                 assert value != None
-                message = (self.shardID, transactionID, "Read", key, value)
+                message = (self.shardID, trID, "Read", key, value)
                 coordinator.send(message)
 
             elif messageType == "Prepare":
@@ -78,37 +86,39 @@ class Shard:
                 listOfParticipants = msgRecv[2]
                 dependency = msgRecv[3]
 
-                lsn = log.syncLog( transactionID , "Prepare",
+                lsn = log.syncLog( trID , "Prepare",
                 dependency, listOfParticipants )
                 if lsn:
-                    updateHigh(lsn)
-                    acceptMessage = ( self.shardID, transactionID, "Accept" )
+                    updateHigh()
+                    acceptMessage = ( self.shardID, trID, "Accept" )
                     coordinator.send(acceptMessage)
                 else:
-                    abortMessage = (self.shardID, transactionID, "Abort" )
+                    abortMessage = (self.shardID, trID, "Abort" )
                     coordinator.send(abortMessage)
                 
             elif messageType == "Commit":
                 commitTime = msgRecv[2]
                 dependency = msgRecv[3]
-                lsn = log.asyncLog( transactionID , "Commit", commitTime )
+                lsn = log.asyncLog( trID , "Commit", commitTime )
 
 
             elif messageType == "Abort":
-                log.asyncLog( transactionID , "Abort")
+                log.asyncLog( trID , "Abort")
 
             else :
                 assert False
  
 
-    def updateHigh( newValue ):
+    def updateHigh():
+        newValue = getHigh()
         assert lowWatermark <= highWatermark
         with self._lock:
-            if (self.highWatermark < lsn):
-                self.highWatermark = lsn
+            if (self.highWatermark < newValue):
+                self.highWatermark = newValue
         assert lowWatermark <= highWatermark
 
-    def updateLow( newValue ):
+    def updateLow():
+        newValue = getLow()
         assert lowWatermark <= highWatermark
         with self._lock:
             if self.lowWatermark < newValue:
