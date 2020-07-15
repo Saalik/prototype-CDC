@@ -93,15 +93,10 @@ D\'efinissez toujours les commandes avant utilisation.
     \item To implement (first in pseudocode, ultimately in running code) these methods.
     \item To show that the implemented methods satisfy their specification.
   \end{itemize}
-}
+} 
 %%
-\RRmotcle{calcul formel, base de formules,  %mots-cl\'es sans rapport
-protocole, diff\'erentiation automatique, % les uns avec les autres
-g\'en\'eration de code,  mod\'elisation, lien symbolique/num\'erique,
-matrice structur\'ee, r\'esolution de syst\`emes polynomiaux}
-\RRkeyword{task placement, environment, % keywords (taken from some
- message passing,  network management,   % random research report)
- performances}
+\RRmotcle{base de données, point de contrôle, journal, spécification, cohérence}
+\RRkeyword{database, checkpointing, log, specification, consistency}
 %%
 \RRprojet{RainbowFS - Sorbonne Universit\'e-LIP6, INRIA}  % cas d'un seul projet
 %%\RRprojets{}
@@ -297,13 +292,13 @@ Depending on the type of the operation the following information is included
 in the record:
 \begin{itemize}
   \item \textbf{Key:} referred object key
-  \item \textbf{Operation:} referred object and its arguments or the system 
+  \item \textbf{Operation:} update on the referred object
   \item \textbf{Dependency:} CVT of the snapshot the transaction is reading from
-  \item \textbf{ListOfParticipants:} participants in a given transaction
-  \item \textbf{CommitTime:} commit time of a transaction
+  \item \textbf{ListOfParticipants:} participants in the given transaction
+  \item \textbf{CommitTime:} commit time of the transaction
 \end{itemize}
 
-These are the different \textit{Types} of records:
+These are the different \textit{Type} of records:
 
 \begin{itemize}
 \item \textbf{Begin:} system record that marks the beginning of a
@@ -323,8 +318,9 @@ It contains a Timestamp, TransactionID, Type, ListOfParticipants.
 \item \textbf{Update:} transaction record containing the update operation on a given
 object.
 It contains Timestamp, TransactionID, Type, Key, Operation.
-\item \textbf{Checkpoint:} system record containing information about the last Checkpoint.
+\item \textbf{Checkpoint:} system record containing information about a Checkpoint.
 It contains a Timestamp, Type and Dependency. 
+For each checkpoint one record is written.
 \end{itemize}
 
 
@@ -344,7 +340,7 @@ Checkpoints are created from a causally-consistent cut called Checkpoint Time
 (CT) (Section \ref{sec:checkpoint-time}) to ensure that there are no consistency
 anomalies in the checkpoint.
 Once all the objects in a CT have been checkpointed, then the corresponding
-prefix of the journal can be truncated. 
+prefix of the journal can be truncated.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Consistent cuts of interest}
@@ -738,12 +734,12 @@ document\ref{sec:evict-daemon}.
 \section{Recovery}
 \label{sec:recovery}
 
-After antidote has restarted, due to a scheduled restart or a crash, it needs to 
-reconstruct a stable view of the database. We assume that the Journals in each 
+After a restart, due to a scheduled restart or a crash, it needs to 
+reconstruct a stable view of the database. We assume that the Journal in each 
 shard might have incomplete information about transactions. 
 
 The goal of the recovery is to reconstruct the information that is necessary for 
-the database to run correctly and ensure that the different invariants reamain true.
+the database to run correctly and ensure that the different invariants remain true.
 
 % The Journals contains information from transaction that are committed or were running when the database stopped, alongside those transaction records there are the record abouts 
 
@@ -752,35 +748,47 @@ At the end of the algorithm we expect the following:
   \item Time of the last checkpoint
   \item High Watermark
   \item High Watermark
-  \item Transactions that have a prepare record in each participating shard have a commit record written in each relevant Journal.
-  \item Transactions that are missing a prepare record have an abort message written in each relevant Journal.
+  \item Transactions that have a prepare record in each participating shard have a 
+  commit record written in each relevant Journal.
+  \item Transactions that are missing a prepare record have an abort message 
+  written in each relevant Journal.
 \end{itemize}
 
 Recovery is initiated by the Transaction Manager at each shard. 
-First the Journal is read to find the last checkpoint record that has been written to the log. 
-Once the we have the last Checkpoint Time we can find the Low Watermark.
-One of the Journal invariant is that all committed transactions that are not checkpointed are complete in the Journal.
+First the Journal is read to find the last checkpoint record that has been written
+ to the log. 
+Once the last Checkpoint Time is found the Low Watermark can be determined.
+One of the Journal invariant is that all committed transactions that are not 
+checkpointed are complete in the Journal.
 
-Using these two information we find the first begin record that has a timestamp high than the Checkpoint Time.
-Low Watermark is initialized with the Log Sequence Number (LSN) of this record. 
+Using these two information, Low Watermark is initialized with the 
+Log Sequence Number (LSN) of the record that has a higher timestamp 
+than the last Checkpoint Time. 
 % This invariant needs to be added to the journal invariants
 % The journal always contains a Checkpoint record if one exist
 High Watermark is initialized with the LSN of the last record in the journal.
-At this point in the algorithm we have the last Checkpoint time, Low Watermark and High Watermark.
+At this point we have the last Checkpoint time, Low Watermark and High Watermark.
 
-We can now retrieve all the transaction IDs that have a record in the journal between High Watermark and Low Watermark called \textit{transactionIDs}.
-We build two additional sets of transaction IDs, one with those with a commit record called \textit{committed} and the other with transactions that have a prepare record called \textit{prepared}.
+We can now retrieve all the transaction IDs that have a record in the journal 
+between High Watermark and Low Watermark called \textit{transactionIDs}.
+Two additional sets of transaction IDs are created, one with transaction with a commit 
+record called \textit{committed} and the second with transactions that have a 
+prepare record called \textit{prepared}.
 
-Once we have the three sets we check if \textit{committed} is a subset of \textit{prepared} and textit{prepared} is a subset of \textit{transactionIDs} to ensure the integrity of the transactions. 
+Using three sets we check if \textit{committed} is a subset of 
+\textit{prepared} and textit{prepared} is a subset of \textit{transactionIDs} 
+to ensure the integrity of the transactions. 
 Should this test fail the Journal would be deemed unusable.
 
-For transactions that have no commit record or prepare record a abort message needs to be written in the journal of every participating shard. 
+For transactions that have no commit record or prepare record an abort message 
+needs to be written in the journal in every participating shard. 
 
-For transactions that have no commit record but a prepare record their IDs are sent to the Transaction Manager to check if each participating shard has a prepare record. If true then two-phase commit is initiated to write the commit record.
+For transactions that have no commit record but a prepare record their IDs are sent 
+to the Transaction Manager to ensure if each participating shard has a prepare record. 
+If true then two-phase commit is initiated to write the commit record. 
+If not the abort message is sent to every participating shards.
 
-Once the Transaction manager receives information from all the shards it initiates the two-phase commits and abortion of the transactions.
-
-Once over the database is ready to operate.
+Once all shards have complete journals, the database is ready to operate.
 
 
 % Using the information inside the journal the recovery construct essential information that is needed.
