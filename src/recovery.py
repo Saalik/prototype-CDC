@@ -121,12 +121,12 @@ def recovery(journal):
                 assert record.getTransactionID() in transactionIDs
 
 
-    # Once we have a both sets we check if the commit list is a subset of prepare
+    # Once we have the three sets we check if the commit list is a subset of prepare
     # And if the committed is a subset of transaction
     assert committed.issubset(prepared)
     assert prepared.issubset(transactionIDs)
     
-    # We single out the transactions that have no commit record or or prepare record
+    # We single out the transactions that have no commit record or prepare record
     # For now we return the transactionIDs for the abort 
     # records to be written in the journal. 
     # We cannot write the records now because the journal is not initialized yet
@@ -143,8 +143,7 @@ def recovery(journal):
     trWithoutCommitAndParticipants = dict()
 
     for record in journal:
-        if record.getOperation() == "Prepare" 
-        and record.getTransactionID() in transactionsWithoutCommit:
+        if record.getOperation() == "Prepare" and record.getTransactionID() in transactionsWithoutCommit:
             transactionID = record.getTransactionID()
             listOfParticipants = record.getParticipants
             trWithoutCommitAndParticipants[tranactransactionID] = listOfParticipants
