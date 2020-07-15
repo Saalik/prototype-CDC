@@ -484,8 +484,6 @@ A transaction that is not included in a checkpoint must have all flushed record 
 the journal.
 
 
-
-
 \section{Cache}
 \label{sec:cache}
 
@@ -661,34 +659,34 @@ document\ref{sec:evict-daemon}.
 \section{Recovery}
 \label{sec:recovery}
 
-After antidote has restarted, due to a scheduled restart or a crash, it needs to reconstruct a stable view of the database. We assume that the Journals in each shard might have incomplete information about transactions. 
+After antidote has restarted, due to a scheduled restart or a crash, it needs to 
+reconstruct a stable view of the database. We assume that the Journals in each 
+shard might have incomplete information about transactions. 
 
-The goal of the recovery is to reconstruct information that is necessary for the database to run correctly and ensure that the different invariants are true.
+The goal of the recovery is to reconstruct the information that is necessary for 
+the database to run correctly and ensure that the different invariants reamain true.
 
 % The Journals contains information from transaction that are committed or were running when the database stopped, alongside those transaction records there are the record abouts 
 
 At the end of the algorithm we expect the following:
-- Time of the last checkpoint
-- High Watermark
-- Low Watermark
-- Transactions that have a prepare record in each participating shard have a commit record written in each relevant Journal.
-- Transactions that are missing a prepare record have an abort message written in each relevant Journal.
+\begin{itemize}
+  \item Time of the last checkpoint
+  \item High Watermark
+  \item High Watermark
+  \item Transactions that have a prepare record in each participating shard have a commit record written in each relevant Journal.
+  \item Transactions that are missing a prepare record have an abort message written in each relevant Journal.
+\end{itemize}
 
-Recovery is initiated the Transaction Manager at each shard. 
-The recovery reads the Journal entirely. 
+Recovery is initiated by the Transaction Manager at each shard. 
 First the Journal is read to find the last checkpoint record that has been written to the log. 
 Once the we have the last Checkpoint Time we can find the Low Watermark.
 One of the Journal invariant is that all committed transactions that are not checkpointed are complete in the Journal.
 
-Using these two information we find the first begin record that has a timestamp high than the Checkpoint Time. 
-
+Using these two information we find the first begin record that has a timestamp high than the Checkpoint Time.
 Low Watermark is initialized with the Log Sequence Number (LSN) of this record. 
-
 % This invariant needs to be added to the journal invariants
 % The journal always contains a Checkpoint record if one exist
-
 High Watermark is initialized with the LSN of the last record in the journal.
-
 At this point in the algorithm we have the last Checkpoint time, Low Watermark and High Watermark.
 
 We can now retrieve all the transaction IDs that have a record in the journal between High Watermark and Low Watermark called \textit{transactionIDs}.
