@@ -199,7 +199,7 @@ A shard’s Journal stream is replicated to its counterparts at all other DCs.
 
 The events recorded in the Journal are called Records.
 They contain different types of information. 
-It can be system information(such as checkpoint operations), transaction
+It can be system information (such as checkpoint operations), transaction
 operations (such as commit message) or operations on an object.
 These last operations are essential to the integrity of the database.
 The loss of a single record means that all the objects that are materialized
@@ -215,33 +215,35 @@ Each of these records contains these entries:
 Depending on the type of the operation the following information is included
 in the record:
 \begin{compactitem}
-  \item \textbf{Key:} reffered object key
+  \item \textbf{Key:} referred object key
   \item \textbf{Operation:} referred object and its arguments or the system 
   \item \textbf{Dependency:} CVT of the snapshot the transaction is reading from
   \item \textbf{ListOfParticipants:} participants in a given transaction
   \item \textbf{CommitTime:} commit time of a transaction
 \end{compactitem}
 
-These are the different Type of operation:
+These are the different \textit{Types} of records:
 
 \begin{compactitem}
 \item \textbf{Begin:} system record that marks the beginning of a
 transaction. 
-It contains the Timestamp, TransactionID, Type, followed by the Dependency.
+It contains a Timestamp, TransactionID, Type, followed by the Dependency.
 This record is written once per transaction to each shard
 participating.
 \item \textbf{Prepare:} system record that is written by shards during the two-phase commit. 
-It contains the Timestamp, TransactionID, Type, followed by the ListOfParticipants.
+It contains a Timestamp, TransactionID, Type, followed by the ListOfParticipants.
 The Timestamp in this context is the clock proposed by the shard as the commit time.
 \item \textbf{Commit:} system record that contains the commit time sent by the coordinator
-to the shards once the two phase protocol is finished.
-It contains the Timestamp, TransactionID, Type, CommitTime.
+to the shards once the two-phase protocol is finished.
+It contains a Timestamp, TransactionID, Type, CommitTime.
 The commit time is sent to the shard by the transaction Coordinator.
 \item \textbf{Abort:} system record that marks the abortion of a transaction.
-It contains the Timestamp, TransactionID, Type, ListOfParticipants.
+It contains a Timestamp, TransactionID, Type, ListOfParticipants.
 \item \textbf{Update:} transaction record containing the update operation on a given
 object.
 It contains Timestamp, TransactionID, Type, Key, Operation.
+\item \textbf{Checkpoint:} system record containing information about the last Checkpoint.
+It contains a Timestamp, Type and Dependency. 
 \end{compactitem}
 
 
@@ -473,6 +475,15 @@ These relations control the behavior of each shard \ref{fig:system-vts}
   }
   \label{fig:system-vts}
 \end{figure}
+
+At the Journal level there are several invariants that are necessary to ensure that no
+data is lost.
+First if a Checkpoint exist there should be a \textit{Checkpoint} record present in the
+Journal.
+A transaction that is not included in a checkpoint must have all flushed record present in
+the journal.
+
+
 
 
 \section{Cache}
