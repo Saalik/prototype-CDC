@@ -317,7 +317,7 @@ The commit time is sent to the shard by the transaction Coordinator.
 It contains a Timestamp, TransactionID, Type, ListOfParticipants.
 \item \textbf{Update:} transaction record containing the update operation on a given
 object.
-It contains Timestamp, TransactionID, Type, Key, Operation.
+It contains a Timestamp, TransactionID, Type, Key, Operation.
 \item \textbf{Checkpoint:} system record containing information about a Checkpoint.
 It contains a Timestamp, Type and Dependency. 
 For each checkpoint one record is written.
@@ -734,51 +734,49 @@ document\ref{sec:evict-daemon}.
 \section{Recovery}
 \label{sec:recovery}
 
-After a restart, due to a scheduled restart or a crash, it needs to 
-reconstruct a stable view of the database. We assume that the Journal in each 
-shard might have incomplete information about transactions. 
-
-The goal of the recovery is to reconstruct the information that is necessary for 
-the database to run correctly and ensure that the different invariants remain true.
+After a restart, due to a scheduled restart or a crash, the database needs to 
+reconstruct a stable view of the database. 
+The Transaction Manager is the first process to start, it initializes each shard.
+Each shards then starts a recovery algorithm.
+Journal in each shard might have incomplete information 
+about transactions. 
+Taking account of this the goal of the recovery is to reconstruct the information
+that is necessary for the database to run correctly and ensure that Journal invariants
+are true before starting to receive new updates.
 
 % The Journals contains information from transaction that are committed or were running when the database stopped, alongside those transaction records there are the record abouts 
 
-At the end of the algorithm we expect the following:
+At the end of the algorithm the following is true at each shard:
 \begin{itemize}
-  \item Time of the last checkpoint
-  \item High Watermark
-  \item High Watermark
+  \item Time of the last checkpoint is known
+  \item Low Watermark and High Watermark is set
   \item Transactions that have a prepare record in each participating shard have a 
   commit record written in each relevant Journal.
   \item Transactions that are missing a prepare record have an abort message 
   written in each relevant Journal.
 \end{itemize}
 
-Recovery is initiated by the Transaction Manager at each shard. 
 First the Journal is read to find the last checkpoint record that has been written
- to the log. 
-Once the last Checkpoint Time is found the Low Watermark can be determined.
-One of the Journal invariant is that all committed transactions that are not 
-checkpointed are complete in the Journal.
-
-Using these two information, Low Watermark is initialized with the 
-Log Sequence Number (LSN) of the record that has a higher timestamp 
-than the last Checkpoint Time. 
+to the log and the last Checkpoint Time is read. 
+Using the Checkpoint Time, and the fact that every committed transaction that is not part
+of the last checkpoint must be complete in Journal.
+Low Watermark is initialized with the Log Sequence Number (LSN) of the first \textit{Begin} 
+record that postdates the Checkpoint Time. 
 % This invariant needs to be added to the journal invariants
 % The journal always contains a Checkpoint record if one exist
-High Watermark is initialized with the LSN of the last record in the journal.
+High Watermark is then initialized with the LSN of the last record in the journal.
 At this point we have the last Checkpoint time, Low Watermark and High Watermark.
 
-We can now retrieve all the transaction IDs that have a record in the journal 
-between High Watermark and Low Watermark called \textit{transactionIDs}.
-Two additional sets of transaction IDs are created, one with transaction with a commit 
-record called \textit{committed} and the second with transactions that have a 
-prepare record called \textit{prepared}.
+Then all the IDs if transaction that have a record in the journal between Low Watermark
+and High Watermark are then put in a set called \textit{transactionIDs}.
+Two additional sets of transaction IDs are created, one with transactions that have
+a commit record called \textit{committed} and the second with transactions that have
+a prepare record called \textit{prepared}.
 
-Using three sets we check if \textit{committed} is a subset of 
+Using these three sets we check if \textit{committed} is a subset of 
 \textit{prepared} and textit{prepared} is a subset of \textit{transactionIDs} 
 to ensure the integrity of the transactions. 
-Should this test fail the Journal would be deemed unusable.
+Should this test fail the recovery will fail.
 
 For transactions that have no commit record or prepare record an abort message 
 needs to be written in the journal in every participating shard. 
@@ -791,7 +789,8 @@ If not the abort message is sent to every participating shards.
 Once all shards have complete journals, the database is ready to operate.
 
 
-% Using the information inside the journal the recovery construct essential information that is needed.
+% Using the information inside the journal the recovery construct essential information 
+% that is needed.
 % It also recover information about transactions that were running and did not commit.
 
 \section{Actors}
