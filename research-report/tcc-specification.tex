@@ -23,6 +23,7 @@
 \usepackage[T1]{fontenc} % ou \usepackage[OT1]{fontenc}
 \usepackage{RR}
 \usepackage{hyperref}
+\usepackage[all]{hypcap}
 %%\usepackage[frenchb]{babel} % optionnel
 \RRNo{????}
 %% \RTNo{0703}
@@ -98,7 +99,7 @@ D\'efinissez toujours les commandes avant utilisation.
 \RRmotcle{base de données, point de contrôle, journal, spécification, cohérence}
 \RRkeyword{database, checkpointing, log, specification, consistency}
 %%
-\RRprojet{RainbowFS - Sorbonne Universit\'e-LIP6, INRIA}  % cas d'un seul projet
+\RRprojet{Delys - Sorbonne Universit\'e-LIP6, INRIA}  % cas d'un seul projet
 %%\RRprojets{}
 %%
 %% \URLorraine % pour ceux qui sont \`a l'est
@@ -138,7 +139,7 @@ mechanism.
 Initializing from a recent checkpoint requires to re-execute only
 the operations after the checkpoint, which can be much faster.
 Once a full-system checkpoint exists, the preceding part of the log can
-be truncated if desired.
+be truncated.
 
 Journaling, materializing, checkpointing and journal truncation are
 well-known mechanisms.
@@ -147,7 +148,7 @@ challenging in Antidote, because of its complex geo-distributed and
 sharded structure, and because of its partially-ordered consistency
 model.
 
-The aim of this research is to specify rigorously, and to implement
+The aim of this document is to specify rigorously, and to implement
 correctly and efficiently, a safe journaling, materializing,
 checkpointing and truncation mechanism for Antidote.
 This includes the following partial objectives:
@@ -169,8 +170,7 @@ This includes the following partial objectives:
   To specify the pre-, post-, rely- and guarantee-conditions of these
   methods.
 \item
-  To implement (first in pseudocode, ultimately in running code) these
-  methods.
+  To provide a reference implementation of these methods.
 \item
   To show that the implemented methods satisfy their specification.
 \end{itemize}
@@ -186,10 +186,12 @@ concurrently at any DC under the Transactional Causal Consistency model.
 Antidote supports concurrent updates occurring in geo-distributed,
 highly-available DCs; each DC originates its own set of updates.
 In turn, a DC is partitioned into non-overlapping storage servers called
-shards, coordinated by Transaction Coordinators.\ref{fig:architecture}
+shards, coordinated by Transaction Coordinators (fig: \ref{fig:architecture}).
 Thus, the journal is not a single sequential data structure, but is
 logically the union of a number of sequential \emph{journal streams},
 one per shard per DC\@.
+The originating shard is the single writer of a journal stream; all 
+other replicas are readers.
 Furthermore, a stream originating in some shard in some DC is replicated
 to the same shard in all other DCs.%
 %
@@ -207,8 +209,8 @@ and a set of remote journal streams, each one replicating the
 updates to this same shard at some other DC\@.
 %
 \footnote{
-  In this document we ignore the possibility of adding additional shards 
-  and/or DCs. 
+  In this document we ignore the possibility of adding or removing additional shards 
+  and/or DCs while the system is running. 
 }
 
 \begin{figure}[tp]
@@ -221,12 +223,12 @@ updates to this same shard at some other DC\@.
 \begin{figure}[tp]
   \centering
   \includegraphics[width=1\textwidth]{figures/insidedc.png}
-  \caption{Inside a DC. The Transaction Manager supervises Transaction 
+  \caption{\label{fig:insidedc}
+  Inside a DC. The Transaction Manager supervises Transaction 
   Coordinators that handle all the client transactions. Every shard has a 
   Cache, a Journal, and three daemons with a specific role. Connected to 
   them is a Checkpoint Daemon that creates checkpoints and stores them 
   into a Checkpoint Store.}
-  \label{fig:insidedc}
 \end{figure}
 
 \subsection{Transactional Causal Consistency}
@@ -250,15 +252,14 @@ This means that, if a CVT contains some update $u$, then it also contains all
 updates in the same transaction as $u$, as well as those that
 happened-before $u$. 
 The snapshot time of a transaction is called its \emph{dependency
-CVT}, and its output is identified by its \emph{commit CVT}.
+CVT}, and its effects are identified by its \emph{commit CVT}.
 
 Recall that a given DC-shard has a local journal stream and one journal
 stream per remote DC\@.
 Similarly, a CVT has a timestamp per DC\@.
 We can now map each entry in a CVT (for some DC) to the prefix of the
 journal stream (of the same DC) that happened-before it.
-This forms a \emph{transactionally- and causally-consistent snapshot}.
-
+This cut forms a \emph{transactionally- and causally-consistent snapshot}.
 
 \subsection{Journal structure}
 \label{sec:journal}
@@ -268,7 +269,7 @@ Journal herein.
 The Journal constitutes the ground truth of the database state. 
 The Journal is logically composed of a number of sequential streams, each of
 which records the events originating from a given shard. 
-A shard’s Journal stream is replicated to its counterparts at all other DCs. 
+A DC-shard’s Journal stream is replicated to its counterparts at all other DCs. 
 
 \subsection{Records}
 \label{sec:record}
@@ -277,10 +278,10 @@ The events recorded in the Journal are called Records.
 They contain different types of information. 
 It can be system information (such as checkpoint operations), transaction
 operations (such as commit message) or operations on an object.
-These last operations are essential to the integrity of the database.
+These latter operations are essential to the integrity of the database.
 The loss of a single record means that all the objects that are materialized
 afterward are incorrect.
-Each of these records contains these entries:
+A record contains these entries:
 \begin{itemize}
   \item \textbf{Log Sequence Number (LSN):} A unique monotonically increasing 
   sequence number
@@ -292,13 +293,13 @@ Depending on the type of the operation the following information is included
 in the record:
 \begin{itemize}
   \item \textbf{Key:} referred object key
-  \item \textbf{Operation:} update on the referred object
+  \item \textbf{Operation:} update on the referred object with its arguments
   \item \textbf{Dependency:} CVT of the snapshot the transaction is reading from
   \item \textbf{ListOfParticipants:} participants in the given transaction
   \item \textbf{CommitTime:} commit time of the transaction
 \end{itemize}
 
-These are the different \textit{Type} of records:
+These are the different \textit{Types} of records:
 
 \begin{itemize}
 \item \textbf{Begin:} system record that marks the beginning of a
@@ -306,11 +307,12 @@ transaction.
 It contains a Timestamp, TransactionID, Type, followed by the Dependency.
 This record is written once per transaction to each shard
 participating.
-\item \textbf{Prepare:} system record that is written by shards during the two-phase commit. 
+\item \textbf{Prepare:} system record that is written by shards during the first phase 
+of the two-phase commit. 
 It contains a Timestamp, TransactionID, Type, followed by the ListOfParticipants.
 The Timestamp in this context is the clock proposed by the shard as the commit time.
 \item \textbf{Commit:} system record that contains the commit time sent by the coordinator
-to the shards once the two-phase protocol is finished.
+to the shards in the second phase of the two-phase protocol.
 It contains a Timestamp, TransactionID, Type, CommitTime.
 The commit time is sent to the shard by the transaction Coordinator.
 \item \textbf{Abort:} system record that marks the abortion of a transaction.
@@ -321,24 +323,27 @@ It contains a Timestamp, TransactionID, Type, Key, Operation.
 \item \textbf{Checkpoint:} system record containing information about a Checkpoint.
 It contains a Timestamp, Type and Dependency. 
 For each checkpoint one record is written.
+\item \textbf{Participant:} system record containing information when a new shard 
+participates in the transaction.
+It contains a Timestamp, TransactionID, Type.
 \end{itemize}
 
 
 \subsection{Checkpoint store}
 \label{sec:checkpoint-store}
 
-In this design we persist periodically materialized versions of objects, called
+In this design we periodically persist materialized versions of objects, called
 checkpoints in a store called the Checkpoint Store.  
 In the worst case after a crash, all volatile state has been lost, the current
 state of an object can be computed by: (1) loading the most recent checkpoint
-into memory, (2) reading updates that postdate the checkpoint from the journal,
-(3) applying those updates to the in-memory state.
+into memory, (2) reading updates that are more recent than the checkpoint from
+the journal, (3) applying those updates to the in-memory state.
 
-Once an object has been checkpointed, any earlier journal record that is part of 
-the checkpoint for that object is irrelevant. 
-Checkpoints are created from a causally-consistent cut called Checkpoint Time
+A checkpoint created from a causally-consistent cut called Checkpoint Time
 (CT) (Section \ref{sec:checkpoint-time}) to ensure that there are no consistency
 anomalies in the checkpoint.
+Once an object has been checkpointed, any earlier journal record that is part of 
+the checkpoint for that object is irrelevant from the perpective of durability. 
 Once all the objects in a CT have been checkpointed, then the corresponding
 prefix of the journal can be truncated.
 
@@ -353,7 +358,7 @@ If Event~1 is causally-before Event~2, their vector timestamps
 Note that the converse is not true in Antidote.
 The timestamps of two
 concurrent events may be either incomparable or arbitrarily ordered (a
-timestamp is a safe approximation).
+timestamp is a safe approximation of happened-before).
 
 The order between vector timestamps \emph{vt1} and \emph{vt2} is defined
 as followed:
@@ -375,11 +380,11 @@ as followed:
   There is some entry in \emph{vt1} that is lower than the
   corresponding entry in \emph{vt2}, and vice-versa.
   Events~1 and~2 are necessarily concurrent, but the converse is not true;
-  that is, if two vector timestamps are incomparable, this does not guarantee
-  that the corresponding events are concurrent.
+  that is, if two events are concurrent, this does not guarantee
+  that their vector timestamps are incomparable.
 \end{itemize}
 A vector timestamp represents a \emph{cut} or time of the data store.
-We are interested only in \emph{CVTs} as they have properties that are 
+We are interested only in \emph{consistent cut} as they have properties that are 
 useful for maintaining information about the database.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -388,7 +393,7 @@ useful for maintaining information about the database.
 
 \subsection{Checkpoint Time (CT)}
 \label{sec:checkpoint-time}
-Every time a checkpoint is created, we persist the operation in the Journal
+Every time a checkpoint is created, we persist a checkpoint record in the Journal
 (Section \ref{sec:journal}).
 
 The variable \emph{Checkpoint Time} designates the \emph{oldest} available
@@ -397,17 +402,17 @@ checkpoint whose state includes all the update records committed at any time
 $\le \mathit{Checkpoint Time}$.
 State prior to \emph{CT} cannot be safely recovered.
 
-If the checkpoint store does not support versioning (i.e., each object
-has a single version), then there is a single checkpoint, identified by
-\emph{Checkpoint Time}.
+
 Initially, \emph{Checkpoint Time = $-\infty$}, implying that the journal
 cannot be trimmed.
-
 Note that, while recovering from \emph{CT} is safe, typically recovery will
 proceed from the \emph{most recent} available checkpoint for performance
 reasons.
 To save space, a system typically stores only a few numbers of checkpoints,
 preferably only one. 
+If the checkpoint store does not support versioning (i.e., each object
+has a single version), then there is a single checkpoint, identified by
+\emph{Checkpoint Time}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -419,7 +424,8 @@ corresponding shard in other DCs.
 Although the shard-to-shard connection is FIFO, the storage state of
 different shards in the same DC is not causally consistent.
 Without extra care, a transaction that reads from multiple shards might
-be unsafe, or has to wait, because a shard is missing updates with
+be unsafe.
+To avoid this, a transaction should of a shard is missing updates with
 respect to another.
 
 The Cure protocol \cite{rep:pro:sh182} is what ensures the TCC properties.
@@ -442,7 +448,7 @@ Cure has two main objectives:
   \emph{causally safe}, i.e., the corresponding updates, and their causal
   predecessors, have been received and persisted by all shards of this DC.
   States that are above the DCSf are not \emph{visible}.
-  A transaction whose snapshot time is not earlier than the DCSf would
+  A transaction whose snapshot time is not earlier than the DCSf must
   be blocked until the DCSf advances beyond it.
 \end{enumerate}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -462,10 +468,9 @@ at some shard are monotonically non-decreasing (this is always
 possible).
 To compute the GCSt each shard shares its DCSf periodically with their
 counterparts in other DCs. 
-Using this information every shard computes the minimal point of advancement of
-all the DCs. 
+The vague GCSt is computed as the lower bound of all known DCSf.
 
-To store some state that is earlier than the GCSt, means we can use its
+State that is earlier than the GCSt, can be stored using its 
 sequential representation, avoiding any concurrency-related metadata such as
 vector clocks or tombstones.
 The transitions between successive GCSt's can be explained as sequential
@@ -474,6 +479,8 @@ This makes the representation simpler and more compact and enable the
 use of any sequential database as a checkpoint store.
 For instance, both Add-Wins and Remove-Wins sets reduce to classical
 sequential sets, and RGA reduces to a classical list.
+We leverage this fact by choosing checkpoint states to be earlier than 
+GCSt whenever possible, this makes the sequentially consistent.
 
 One issue with GCSt is that it makes progress only when every single DC
 is available.
@@ -482,7 +489,7 @@ metadata.
 
 \subsection{Min-Dependency and Max-Committed}
 \label{sec:dep-commit}
-In order to satisfy the properties of checkpoints, the DCSf and the GCSt we keep
+In order to satisfy the properties of checkpoints, of the DCSf and the GCSt we keep
 track of all the dependencies of running transactions but also all the commit
 times of finished transactions. 
 Among those we single out those who are the most important.
