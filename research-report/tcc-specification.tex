@@ -494,11 +494,11 @@ track of all the dependencies of running transactions but also all the commit
 times of finished transactions. 
 Among those we single out those who are the most important.
 
-The first one is called Min-Dependency it represents the oldest snapshot any
+Min-Dependency represents the oldest snapshot any
 running transaction is reading from. 
-Because one key property of the checkpoints is that they are sequentially
-consistent, there should be no in-flight transactions at Checkpoint-Time.
-To ensure this property holds true Min-Dependency is used to track the point
+Because a checkpoints is sequentially consistent, there should be 
+no in-flight transactions at Checkpoint-Time.
+To ensure that this property holds true Min-Dependency is used to track the point
 beyond which sequentiality is not guaranteed.
 When a transaction is finished, committed or aborted, the Min-Dependency
 advances to the next Dependency. 
