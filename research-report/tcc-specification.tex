@@ -492,6 +492,7 @@ metadata.
 In order to satisfy the properties of checkpoints, of the DCSf and the GCSt we keep
 track of all the dependencies of running transactions but also all the commit
 times of finished transactions. 
+
 Among those we single out those who are the most important.
 
 Min-Dependency represents the oldest snapshot any
@@ -502,42 +503,39 @@ To ensure that this property holds true Min-Dependency is used to track the poin
 beyond which sequentiality is not guaranteed.
 When a transaction is finished, committed or aborted, the Min-Dependency
 advances to the next Dependency. 
-One issue is that until a transaction is running Min-Dependency
-will not advance and consequently snapshotting will be paused.
+One issue is that while a transaction is running, Min-Dependency
+will not advance, and consequently checkpointing will be paused.
 
-The second one called Max-Committed is the last commit time recorded in the
-Journal.
-It is used to control the advancement of the DCSf making sure that a new
+Max-Committed is the last commit time recorded in the Journal.
+DCSf's advancement is bounded by Max-Committed, making sure that a new
 transaction does not read unsafe updates.
 Every time a transaction commits, its commit time become the new Max-Committed.
-Similarly to Min-Dependency, if no transaction commits than Max-Committed does
-not advances and the DCSf is blocked up until that point.
+Similarly to Min-Dependency, if no transaction commits, Max-Committed does
+not advances, nor does DCSf.
 
-\subsection{Low and High}
+\subsection{Low-Watermark and High-Watermark}
 \label{sec:low-high}
-To represent the persistent portion of the log we use Low and High. 
-With \emph{Low} representing the lower bound and \emph{High} the higher
-bound.
-Records that precedes \emph{Low} may be deleted and records that postdates
-\emph{High} might be volatile.
+To represent the persistent portion of the log we use Low-Watermark and High-Watermark. 
+With \emph{Low-Watermark} representing the lower bound and \emph{High-Watermark} 
+the higher bound.
+Records that precedes \emph{Low-Watermark} may be deleted and records that postdates
+\emph{High-Watermark} might be volatile.
 
 \subsection{Invariants}
 \label{sec:cuts-invariants}
 
 The overarching goal of this work is to have no perceivable loss of information,
-meaning records that have not been checkpointed must not be deleted.
-Hence, our first invariant $\mathit{Low} \le \mathit{Checkpoint Time}$.
-One key property of checkpoints is that they should be sequentially consistent
-and stable across all DCs.
-Hence, the second and third invariant $\mathit{Checkpoint Time} \le
-\mathit{GCSt}$ and $\mathit{Checkpoint Time} \le \mathit{Min-Dependency}$.
-By construction the GCSt is computed using all the DCSf across all the DCs so
-this gives us the following invariant $\mathit{GCSt} \le
-\mathit{DCSf}$. 
+meaning that records that have not been checkpointed must not be deleted.
+Hence, our first invariant is $\mathit{Low} \le \mathit{Checkpoint Time}$.
+Checkpoints should be sequentially consistent and stable across all DCs.
+Hence, the invariants $\mathit{Checkpoint Time} \le
+\mathit{GCSt}$ and $\mathit{Checkpoint Time} \le \textit{Min-Dependency}$.
+By construction the GCSt is computed as the lower bound of all known DCSfs across
+so this gives us the following invariant $\mathit{GCSt} \le \mathit{DCSf}$. 
 DCSf represents the point of safety in a DC using shared information between
 shards about their registered \emph{commit times} therefore $\mathit{DCSf} \le
-\mathit{Max-Committed}$. 
-These relations control the behavior of each shard \ref{fig:system-vts}
+\textit{Max-Committed}$. 
+These relations control the behavior of each shard (\textit{figure} \ref{fig:system-vts}).
 
 \begin{figure}[tp]
   \centering
