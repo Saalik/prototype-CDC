@@ -860,26 +860,28 @@ Low-Watermark is set with the Log Sequence Number of this record.
 
 The Fill Daemon ensures that the objects that are needed in the cache are properly
 materialized. 
-When an object version is missing, the cache sends a signal to the Fill Daemon so it 
+When an object version is missing, the Cache sends a signal to the Fill Daemon so it 
 can retrieve the needed information in order to build the object.
 
-In order to build an object, the Fill Daemon looks if an older version
+In order to build an object, the Fill Daemon looks if a version
 already exist in the cache. 
-If there is none then the Fill Daemon retrieves the last version checkpointed
-if there is any from the Checkpoint Store.
-It then reads all the operations from the journal that have been made and committed
+If none, then the Fill Daemon retrieves the last checkpointed versions 
+from the Checkpoint Store.
+If there is no information about the key in the Checkpoint Store, it returns
+an empty object.
+The Fill Daemon then reads all the operations from the journal that have been made and committed
 since.
 
-Once finished, the fill daemon sends a signal to the Checkpoint Daemon or the 
-Transaction Manager to indicate its completion.
+% Once finished, the Fill Daemon sends a signal to the Checkpoint Daemon or the 
+% Transaction Manager to indicate its completion.
 
-If the Fill Daemon conflicts cannot fill the cache because the \emph{occupancy}
+If the Fill Daemon cannot fill the cache because the \emph{occupancy}
 is full, then it sends a signal to the Evict Daemon~\ref{sec:evict-daemon}.
 
 \subsection{Evict Daemon}
 \label{sec:evict-daemon}
  
-The Evict Daemon is triggered by either a system policy, or the Fill Daemon in 
+The Evict Daemon is triggered by either a system policy, or the Fill Daemon, in 
 order to free up space. 
 If it is triggered by a system policy, then it sends a signal to the 
 checkpoint daemon so that objects in the cache can be opportunistically
