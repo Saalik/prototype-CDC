@@ -25,7 +25,7 @@
 \usepackage{hyperref}
 \usepackage[all]{hypcap}
 %%\usepackage[frenchb]{babel} % optionnel
-\RRNo{????}
+\RRNo{9355}
 %% \RTNo{0703}
 %%
 %% date de publication du rapport
@@ -62,10 +62,7 @@ Marc Shapiro%
 % \RRnote{This is a note}
 % \RRnote{This is a second note}
 %%
-\RRresume{Ce document montre comment utiliser le style RR.sty.
-Pour en savoir plus, consulter le fichier RR.dvi ou RR.pdf.
-D\'efinissez toujours les commandes avant utilisation.
-}
+\RRresume{A MODIFIER}
 \RRabstract{
   The geo-distributed database system Antidote persists its updates in a journal.
   To recover after a crash, or to materialise a version of interest, requires to read and 
@@ -83,7 +80,7 @@ D\'efinissez toujours les commandes avant utilisation.
   a safe journaling, materialising, checkpointing and truncation mechanism for Antidote.
   This includes the following partial objectives:
   \begin{itemize}
-    \item To specify the structures of interest, i.e., distributed journal, materialisation cache, 
+    \item To specify the structures of interest, i.e., distributed journal, materialization cache, 
     and checkpoint store.
     \item To specify the concepts of consistent cut, snapshot, object version, checkpoint, and to 
     identify the consistent cuts that are important for correctness and performance.
@@ -343,7 +340,7 @@ A checkpoint created from a causally-consistent cut called Checkpoint Time
 (CT) (Section \ref{sec:checkpoint-time}) to ensure that there are no consistency
 anomalies in the checkpoint.
 Once an object has been checkpointed, any earlier journal record that is part of 
-the checkpoint for that object is irrelevant from the perpective of durability. 
+the checkpoint for that object is irrelevant from the perspective of durability. 
 Once all the objects in a CT have been checkpointed, then the corresponding
 prefix of the journal can be truncated.
 
@@ -726,12 +723,12 @@ execution, the method exits with no effect.
 Otherwise, the method simply sets the presence bit to false and
 decreases the occupancy.
 
-It relies on the environment not modifying \emph{e}, except for also
+The rely clause state that the environment does not modify \emph{e}, except for 
 evicting, or setting the \emph{used} bit.
-It guarantees that, if the \emph{used} bit changes, the method has no
-effect; otherwise, it modifies only the presence bit.
+The guarantee clause guarantees that, if the \emph{used} bit changes, the method has 
+no effect; otherwise, it modifies only the presence bit.
 
-Eviction is handled by a daemon called Evict Daemon talked about later in this
+Eviction is handled by a daemon called Evict Daemon, discussed later in this
 document\ref{sec:evict-daemon}.
 
 \section{Recovery}
@@ -741,53 +738,58 @@ After a restart, due to a scheduled restart or a crash, the database needs to
 reconstruct a stable view of the database. 
 The Transaction Manager is the first process to start, it initializes each shard.
 Each shards then starts a recovery algorithm.
-Journal in each shard might have incomplete information 
+The journal in some shard might have incomplete information 
 about transactions. 
-Taking account of this the goal of the recovery is to reconstruct the information
-that is necessary for the database to run correctly and ensure that Journal invariants
-are true before starting to receive new updates.
+The goal of the recovery is to reconstruct the information
+that is necessary for the database to run correctly and ensure that Journal 
+invariants are true.
 
-% The Journals contains information from transaction that are committed or were running when the database stopped, alongside those transaction records there are the record abouts 
+% The Journals contains information from transaction that are committed or were running when the database stopped, alongside those transaction records there are the record abouts
 
-At the end of the algorithm the following is true at each shard:
+When recovery is complete the following is true at each shard:
 \begin{itemize}
   \item Time of the last checkpoint is known
-  \item Low Watermark and High Watermark is set
-  \item Transactions that have a prepare record in each participating shard have a 
-  commit record written in each relevant Journal.
-  \item Transactions that are missing a prepare record have an abort message 
-  written in each relevant Journal.
+  \item Low Watermark and High Watermark are set
+  \item Every Transaction that has a prepare record in each participating shard also
+  has a commit record in each corresponding Journal.
+  \item Every Transaction that is missing a prepare record has an abort message 
+  written in each corresponding Journal.
 \end{itemize}
 
+Recovery proceeds as follows. 
 First the Journal is read to find the last checkpoint record that has been written
-to the log and the last Checkpoint Time is read. 
-Using the Checkpoint Time, and the fact that every committed transaction that is not part
-of the last checkpoint must be complete in Journal.
-Low Watermark is initialized with the Log Sequence Number (LSN) of the first \textit{Begin} 
-record that postdates the Checkpoint Time. 
+to the log and set the Checkpoint Time.
+Using the Checkpoint Time, and the fact that every committed transaction that is 
+not part of the last checkpoint must be complete in Journal.
+Low Watermark is initialized with the Log Sequence Number (LSN) of the first 
+\textit{Begin} record that comes after the Checkpoint Time. 
 % This invariant needs to be added to the journal invariants
 % The journal always contains a Checkpoint record if one exist
-High Watermark is then initialized with the LSN of the last record in the journal.
-At this point we have the last Checkpoint time, Low Watermark and High Watermark.
+The High Watermark is then initialized with the LSN of the last complete 
+record in the journal with no gaps.
 
-Then all the IDs if transaction that have a record in the journal between Low Watermark
-and High Watermark are then put in a set called \textit{transactionIDs}.
-Two additional sets of transaction IDs are created, one with transactions that have
-a commit record called \textit{committed} and the second with transactions that have
-a prepare record called \textit{prepared}.
+Next, recovery scans the Journal for transactions that have a record in the
+journal between Low Watermark and High Watermark, and put their IDs in a set
+called \textit{transactionIDs}.
+Two additional sets of transaction IDs are created, one for transactions with
+a commit record, called \textit{committed}, and the second for transactions with
+a prepare record, called \textit{prepared}.
 
-Using these three sets we check if \textit{committed} is a subset of 
-\textit{prepared} and textit{prepared} is a subset of \textit{transactionIDs} 
-to ensure the integrity of the transactions. 
+Using these three sets a check of the invariant $ committed 
+\subseteq prepared \subseteq \emph{transactionIDs} $ is performed.
 Should this test fail the recovery will fail.
+ 
+For every transaction that has no commit record or prepare record, recovery adds an 
+abort record in the journal in every participating shard. 
 
-For transactions that have no commit record or prepare record an abort message 
-needs to be written in the journal in every participating shard. 
-
-For transactions that have no commit record but a prepare record their IDs are sent 
-to the Transaction Manager to ensure if each participating shard has a prepare record. 
-If true then two-phase commit is initiated to write the commit record. 
-If not the abort message is sent to every participating shards.
+For every transaction that has a prepare record but no commit record recovery has 
+to re-run two-phase commit.
+It sends its ID to the Transaction Manager. 
+The Transaction Manager verifies that all participating shard has a
+prepare record, and that none has an abort record.
+If true, and none have a commit record, then two-phase commit is 
+initiated, otherwise the commit record is propagated to the other shards. 
+If not an abort record is sent to every participating shards.
 
 Once all shards have complete journals, the database is ready to operate.
 
@@ -800,15 +802,15 @@ Once all shards have complete journals, the database is ready to operate.
 \subsection{Transaction Manager}
 \label{sec:transaction-daemon}
 
-Each DC has a single process called Transaction Manager that receives
-transactions from clients.
+Each DC has a process called the Transaction Manager, which 
+receives transactions from clients.
 When a client's transaction is received at a DC, it creates a Transaction
 Coordinator to manage it.
-Every Transaction Coordinator generated is supervised by the Transaction
-Manager. 
+Every Transaction Coordinator generated is supervised by the Transaction Manager. 
 It ensures that they handle the transaction and terminate correctly.
-If a Transaction Coordinator crashes before sending a termination signal the
-Transaction Manager creates another process to resume the transaction.
+If a Transaction Coordinator crashes before sending a termination 
+signal the Transaction Manager creates another Transaction 
+Coordinator to recover the transaction.
 
 
 \subsection{Transaction Coordinator}
@@ -819,29 +821,28 @@ Transaction Coordinator, running on some arbitrary server of the DC
 where the client is located.
 The role of the Coordinator is to start the transaction at each involved
 shard, to send each client operation to the correct shard, and to
-coordinate the termination (commit or abort) of the transaction among
-the involved shards.
+coordinate the two-phase commit of the transaction among all the shards.
 
-A transaction's coordinator first assigns it a unique transaction ID and
+A Transaction Coordinator assigns it a unique transaction ID and
 a \emph{Dependency CVT}.
 When the transaction issues an operation on some object, the coordinator
-forwards it to the appropriate local shard.
+forwards it to the appropriate shard in the same DC.
 
 \subsection{Checkpoint Daemon}
 \label{sec:checkpoint-daemon}
 
-The Checkpoint Daemon stores persistently materialized versions that it
-\emph{get}s from the cache.
+The Checkpoint Daemon periodically gets materialized versions from the cache and 
+persist them in the Checkpoint Store.
 The eviction daemon should signal its intent to evict to the
 Checkpoint Daemon, enabling the latter to checkpoint 
-opportunistically before objects are evicted.
+opportunistically before the eviction occurs.
 Furthermore, when the trimming daemon wants to advance, it signals the
 Checkpoint Daemon to make progress.
 Because we want the Checkpoint Daemon to be sequentially consistent
-it may not advance \emph{Checkpoint Time} beyond the Min-Dependency.
+it may not advance \emph{Checkpoint Time} beyond Min-Dependency.
 
 If the Checkpoint Daemon conflicts in this way with a running
-transaction, the daemon must wait for the transaction to terminated,
+transaction, the daemon must wait for the transaction to terminate,
 possibly by asking the Transaction Coordinator to forcibly abort it.
 
 
@@ -851,17 +852,15 @@ possibly by asking the Transaction Coordinator to forcibly abort it.
 The Trim Daemon's role is to truncate the Journal. 
 It gets a signal from the Checkpoint Daemon when it has finished a checkpoint.
 Upon reception of the signal the Trim Daemon scans the Journal to find 
-the operations that are now inaccessible.
-
-Once it finds a continuous set of records that are marked as deleted it 
-effectively truncates the Journal.
+the first begin record of a transaction that is not part of the last transaction.
+Low-Watermark is set with the Log Sequence Number of this record.
 
 \subsection{Fill Daemon}
 \label{sec:fill-daemon}
 
-The Fill Daemon ensures the objects that are needed in the cache are properly
+The Fill Daemon ensures that the objects that are needed in the cache are properly
 materialized. 
-When an object version is missing, a signal is sent to the Fill Daemon so it 
+When an object version is missing, the cache sends a signal to the Fill Daemon so it 
 can retrieve the needed information in order to build the object.
 
 In order to build an object, the Fill Daemon looks if an older version
