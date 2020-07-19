@@ -560,6 +560,96 @@ the Journal.
 All records from a non-checkpointed transaction must have all records 
 present in the journal.
 
+\section{Actors}
+\subsection{Transaction Manager}
+\label{sec:transaction-daemon}
+
+Each DC has a process called the Transaction Manager, which 
+receives transactions from clients.
+When a client's transaction is received at a DC, it creates a Transaction
+Coordinator to manage it.
+Every Transaction Coordinator generated is supervised by the Transaction Manager. 
+It ensures that they handle the transaction and terminate correctly.
+If a Transaction Coordinator crashes before sending a termination 
+signal the Transaction Manager creates another Transaction 
+Coordinator to recover the transaction.
+
+
+\subsection{Transaction Coordinator}
+\label{sec:transaction-coordinator}
+            
+A client transaction is managed by a single process called its
+Transaction Coordinator, running on some arbitrary server of the DC
+where the client is located.
+The role of the Coordinator is to start the transaction at each involved
+shard, to send each client operation to the correct shard, and to
+coordinate the two-phase commit of the transaction among all the shards.
+
+A Transaction Coordinator assigns it a unique transaction ID and
+a \emph{Dependency CVT}.
+When the transaction issues an operation on some object, the coordinator
+forwards it to the appropriate shard in the same DC.
+
+\subsection{Checkpoint Daemon}
+\label{sec:checkpoint-daemon}
+
+The Checkpoint Daemon periodically gets materialized versions from the cache and 
+persist them in the Checkpoint Store.
+The eviction daemon should signal its intent to evict to the
+Checkpoint Daemon, enabling the latter to checkpoint 
+opportunistically before the eviction occurs.
+Furthermore, when the trimming daemon wants to advance, it signals the
+Checkpoint Daemon to make progress.
+Because we want the Checkpoint Daemon to be sequentially consistent
+it may not advance \emph{Checkpoint Time} beyond Min-Dependency.
+
+If the Checkpoint Daemon conflicts in this way with a running
+transaction, the daemon must wait for the transaction to terminate,
+possibly by asking the Transaction Coordinator to forcibly abort it.
+
+
+\subsection{Trim Daemon}
+\label{sec:trim-daemon}
+
+The Trim Daemon's role is to truncate the Journal. 
+It gets a signal from the Checkpoint Daemon when it has finished a checkpoint.
+Upon reception of the signal the Trim Daemon scans the Journal to find 
+the first begin record of a transaction that is not part of the last transaction.
+Low-Watermark is set with the Log Sequence Number of this record.
+
+\subsection{Fill Daemon}
+\label{sec:fill-daemon}
+
+The Fill Daemon ensures that the objects that are needed in the cache are properly
+materialized. 
+When an object version is missing, the Cache sends a signal to the Fill Daemon so it 
+can retrieve the needed information in order to build the object.
+
+In order to build an object, the Fill Daemon looks if a version
+already exist in the cache. 
+If none, then the Fill Daemon retrieves the last checkpointed versions 
+from the Checkpoint Store.
+If there is no information about the key in the Checkpoint Store, it returns
+an empty object.
+The Fill Daemon then reads all the operations from the journal that have been made and committed
+since.
+
+% Once finished, the Fill Daemon sends a signal to the Checkpoint Daemon or the 
+% Transaction Manager to indicate its completion.
+
+If the Fill Daemon cannot fill the cache because the \emph{occupancy}
+is full, then it sends a signal to the Evict Daemon~\ref{sec:evict-daemon}.
+
+\subsection{Evict Daemon}
+\label{sec:evict-daemon}
+ 
+The Evict Daemon is triggered by either a system policy, or the Fill Daemon, in 
+order to free up space. 
+If it is triggered by a system policy, then it sends a signal to the 
+checkpoint daemon so that objects in the cache can be opportunistically
+checkpointed if needed.
+
+
 \section{Cache}
 \label{sec:cache}
 
@@ -798,94 +888,6 @@ Once all shards have complete journals, the database is ready to operate.
 % that is needed.
 % It also recover information about transactions that were running and did not commit.
 
-\section{Actors}
-\subsection{Transaction Manager}
-\label{sec:transaction-daemon}
-
-Each DC has a process called the Transaction Manager, which 
-receives transactions from clients.
-When a client's transaction is received at a DC, it creates a Transaction
-Coordinator to manage it.
-Every Transaction Coordinator generated is supervised by the Transaction Manager. 
-It ensures that they handle the transaction and terminate correctly.
-If a Transaction Coordinator crashes before sending a termination 
-signal the Transaction Manager creates another Transaction 
-Coordinator to recover the transaction.
-
-
-\subsection{Transaction Coordinator}
-\label{sec:transaction-coordinator}
-            
-A client transaction is managed by a single process called its
-Transaction Coordinator, running on some arbitrary server of the DC
-where the client is located.
-The role of the Coordinator is to start the transaction at each involved
-shard, to send each client operation to the correct shard, and to
-coordinate the two-phase commit of the transaction among all the shards.
-
-A Transaction Coordinator assigns it a unique transaction ID and
-a \emph{Dependency CVT}.
-When the transaction issues an operation on some object, the coordinator
-forwards it to the appropriate shard in the same DC.
-
-\subsection{Checkpoint Daemon}
-\label{sec:checkpoint-daemon}
-
-The Checkpoint Daemon periodically gets materialized versions from the cache and 
-persist them in the Checkpoint Store.
-The eviction daemon should signal its intent to evict to the
-Checkpoint Daemon, enabling the latter to checkpoint 
-opportunistically before the eviction occurs.
-Furthermore, when the trimming daemon wants to advance, it signals the
-Checkpoint Daemon to make progress.
-Because we want the Checkpoint Daemon to be sequentially consistent
-it may not advance \emph{Checkpoint Time} beyond Min-Dependency.
-
-If the Checkpoint Daemon conflicts in this way with a running
-transaction, the daemon must wait for the transaction to terminate,
-possibly by asking the Transaction Coordinator to forcibly abort it.
-
-
-\subsection{Trim Daemon}
-\label{sec:trim-daemon}
-
-The Trim Daemon's role is to truncate the Journal. 
-It gets a signal from the Checkpoint Daemon when it has finished a checkpoint.
-Upon reception of the signal the Trim Daemon scans the Journal to find 
-the first begin record of a transaction that is not part of the last transaction.
-Low-Watermark is set with the Log Sequence Number of this record.
-
-\subsection{Fill Daemon}
-\label{sec:fill-daemon}
-
-The Fill Daemon ensures that the objects that are needed in the cache are properly
-materialized. 
-When an object version is missing, the Cache sends a signal to the Fill Daemon so it 
-can retrieve the needed information in order to build the object.
-
-In order to build an object, the Fill Daemon looks if a version
-already exist in the cache. 
-If none, then the Fill Daemon retrieves the last checkpointed versions 
-from the Checkpoint Store.
-If there is no information about the key in the Checkpoint Store, it returns
-an empty object.
-The Fill Daemon then reads all the operations from the journal that have been made and committed
-since.
-
-% Once finished, the Fill Daemon sends a signal to the Checkpoint Daemon or the 
-% Transaction Manager to indicate its completion.
-
-If the Fill Daemon cannot fill the cache because the \emph{occupancy}
-is full, then it sends a signal to the Evict Daemon~\ref{sec:evict-daemon}.
-
-\subsection{Evict Daemon}
-\label{sec:evict-daemon}
- 
-The Evict Daemon is triggered by either a system policy, or the Fill Daemon, in 
-order to free up space. 
-If it is triggered by a system policy, then it sends a signal to the 
-checkpoint daemon so that objects in the cache can be opportunistically
-checkpointed if needed.
 
 % \section{Recovery}
 % \label{sec:recovery}
@@ -900,10 +902,6 @@ checkpointed if needed.
 
 While the specification of the concepts of the database are taking shape, the
 communication between DCs needs to be specified as well.
-The specifications talked about in this document are mainly focused on normal
-operation but the recovery need to be worked on. 
-After a crash or a reboot, the database needs to reconstruct a coherent view of
-the system, restarting the different actors and connect to the checkpoint store.
 
 Once recovery semantics have been set, specifying the lifecycle of the
 database will allow us to verify that there is no obvious hole in our design.
