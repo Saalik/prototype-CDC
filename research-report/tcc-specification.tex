@@ -535,7 +535,7 @@ so this gives us the following invariant $\mathit{GCSt} \le \mathit{DCSf}$.
 DCSf represents the point of safety in a DC using shared information between
 shards about their registered \emph{commit times} therefore $\mathit{DCSf} \le
 \textit{Max-Committed}$. 
-These relations control the behavior of each shard (\textit{figure} \ref{fig:system-vts}).
+These relations control the behavior of each shard (\textit{figure \ref{fig:system-vts}}).
 
 \begin{figure}[tp]
   \centering
@@ -556,51 +556,51 @@ These relations control the behavior of each shard (\textit{figure} \ref{fig:sys
   \label{fig:system-vts}
 \end{figure}
 
-At the Journal level there are several invariants that are necessary to ensure that no
-data is lost.
-First if a Checkpoint exist there should be a \textit{Checkpoint} record present in the
-Journal.
-A transaction that is not included in a checkpoint must have all flushed record present in
-the journal.
-
+At the Journal level there are several invariants that are necessary to ensure that
+no data is lost.
+First if a Checkpoint exist there should be a \textit{Checkpoint} record present in
+the Journal.
+All records from a non-checkpointed transaction must have all records 
+present in the journal.
 
 \section{Cache}
 \label{sec:cache}
 
-The cache maintains materialized versions of objects that are currently in use. 
+The cache is a data structure of materialized versions of objects that are 
+currently in use. 
 An entry in the cache is identified by a pair \emph{(k,c)} where
 \emph{key} is the key of the object, and \emph{c} is the commit timestamp of the
 version. 
-Each shard maintains its own cache.
+Each shard maintains its own cache managed by a cache daemon.
 
 \subsection{Object-version descriptors}
 \label{sec:objects}
 
 The system maintains the following information about an object's version
-in an object-version (\emph{entry (e)}):
+in an object-version:
 \begin{itemize}
 \item
-  \emph{key (k)} is the key of the object.
+  \emph{key (abbreviated k)} is the unique identifier of the object.
 \item
-  \emph{commit (c)} is the commit vector timestamp of the transaction
+  \emph{commit (abbreviated c)} is the commit vector timestamp of the transaction
   this object is materialized from.
   An uninitialized object-version has a vector timestamp of $-\infty$.
 \item
-\emph{presence (p)}: the present bit, it is true when the descriptor is
+\emph{presence (abbreviated p)}: the presence bit, it is true when the descriptor is
 significant. 
 Otherwise, it must be ignored.
 \item
-  \emph{valid (v)} is a vector timestamp for which the object has
+  \emph{valid (abbreviated v)} is a vector timestamp for which the object has
   not been updated.
   In other words, it is known that there exist no committed
   updates between \emph{commit} and \emph{valid}.
   Equivalently, this version is part of all snapshots between these two
   values.
 \item
-  \emph{used (z)} a bit that indicates that this version has been recently been
+  \emph{used (abbreviated z)} a bit that indicates that this version has been recently been
   used; useful for cache management.
 \item
-  \emph{blob (b)} is a pointer to the materialized value of the object (if
+  \emph{blob (abbreviated b)} is a pointer to the materialized value of the object (if
   any), either in memory or on checkpoint store.
   The system does not interpret the blob, which is managed by the
   object's type.%
@@ -620,14 +620,17 @@ Otherwise, it must be ignored.
 \subsection{Functions}
 The cache has four main functions:
 \begin{itemize}
-  \item \emph{get(key k, vts dep)} returns the object \emph{k} from the snapshot dep
+  \item \emph{get(key k, vts dep)} returns the object \emph{k} from the snapshot 
+  \emph{dep}. This is called by application and by the checkpoint daemon.
   \item \emph{load(key k, vts c, blob b)} Loads an object k from the checkpoint
-  store, and assigns it a c as timestamps 
+  store, and assigns it a c as timestamps. Called by cache daemon.
   \item \emph{inc(key k, vts c, vts t)} apply operations committed on object k from
-  between time c and t 
-  \item \emph{evict(key k, vts c)} evicts object k timestamped c from the cache
-
+  between time c and t. Called by cache daemon.
+  \item \emph{evict(key k, vts c)} evicts object k timestamped c from the cache. 
+  Called by cache daemon.
 \end{itemize}
+
+A cache entry (\emph{e}) is represented by its primary key (\emph{key k, vts c}).
 
 \subsection{Reading}
 \label{sec:reading}
@@ -654,7 +657,8 @@ version must be \emph{visible} to the client.
 The assertion \emph{visible} abstracts the visibility conditions.
 A version is visible to the client that wrote it (read-my-writes).
 If the client is not writing the transaction, the version must be
-committed and causally stable.
+committed and causally stable to ensure all distant updates have been
+received.
 Furthermore, \emph{visible} requires that access control conditions (not
 addressed in this document) are satisfied \cite{sec:rep:1786}.
 
@@ -668,7 +672,7 @@ sets the used bit \emph{z} to true.
 
 The method relies on the environment not removing or invalidating the
 cache entry, and not resetting the used bit.
-The rely condition forbids the checkpointing daemon from removing old
+Thus, a rely condition forbids the checkpointing daemon from removing old
 checkpoints too aggressively, as \emph{checkpointed}, the time of the
 oldest checkpoint, may not advance further than the \emph{dep} of any
 executing transaction.
@@ -681,18 +685,12 @@ It guarantees to modify no more than the used bit of cache entry
 
 \emph{Load} allocates and initializes a suitable descriptor \emph{e} and
 increments \emph{occupancy}.
-As, for generality, we do not assume the checkpoint store records the
-validity timestamp, we initialize it to the same as checkpoint
-timestamp.%
-%
-\footnote{
-%
-  If the checkpoint store does record the actual commit time
-  and{\slash}or validity timestamp, they may be initialized here.
-}
+If the checkpoint store records the validity timestamp, initialize it accordingly;
+otherwise we initialize it to be equal to a checkpoint timestamp.
 
-\emph{Load} guarantees to not update memory outside of \emph{e} and
-assumes the environment does not overflow the cache nor update
+The guarantee clause of \emph{load} guarantees to not update memory outside of 
+\emph{e}.
+Its rely clause assumes the environment does not overflow the cache nor update
 \emph{e} (other than the used bit).
 This may require concurrency control with \emph{inc}.
 
@@ -715,7 +713,7 @@ the validity timestamp is \emph{t}.
 If \emph{e'} was a new entry, the method increments the occupancy.
 
 Filling the cache is handled by a daemon called Fill Daemon explained later 
-in this document\ref{sec:fill-daemon}.
+in this document (\emph{see \ref{sec:fill-daemon}}).
 
 \subsection{Eviction}
 \label{sec:eviction}
@@ -723,7 +721,7 @@ in this document\ref{sec:fill-daemon}.
 The \emph{evict} method invalidates some entry \emph{e} that is present
 and not used; in practice, it will be triggered either periodically, or
 by a signal from the Fill Daemon.
-Importantly, if the environment sets the \emph{used} bit during its
+Importantly, if \emph{get} sets the \emph{used} bit during its
 execution, the method exits with no effect.
 Otherwise, the method simply sets the presence bit to false and
 decreases the occupancy.
@@ -940,7 +938,7 @@ for TCC on top.
 
 This report presents the work on a design of a database that enables safe 
 truncation of the Journal without any observable loss information. 
-It combines operations and checkpointedgit states to reduce the response time
+It combines operations and checkpointed states to reduce the response time
 associated with having only operations.
 Truncating the Journal while checkpointing during normal operation of the
 database is tricky, and if not properly specified, can lead to data loss.
