@@ -63,35 +63,58 @@ Marc Shapiro%
 % \RRnote{This is a note}
 % \RRnote{This is a second note}
 %%
-\RRresume{A MODIFIER}
+\RRresume{  
+Les applications à grande échelle sont généralement construites au-dessus de 
+base de données géo-distribuées qui tournent sur de multiples centres de données 
+répartis dans le monde.
+Les défaillances de réseaux sont inévitables, pourtant pour la majorité des 
+services en ligne, la disponibilité est essentielle.
+Dans ce contexte, le théorème CAP prouve qu’il est impossible d’être à la fois 
+hautement disponible et fournir de la cohérence forte.
+Sacrifier la cohérence forte, expose les développeurs a des anomalies complexes 
+à gérer.
+
+AntidoteDB est une base de données conçue pour être répartie à travers le monde. 
+Avec pour objectif de fournir une haute disponibilité avec le plus haut modèle 
+de cohérence possible.
+Elle garantit de la cohérence causale transactionnelle (TCC) et des types de 
+données convergents (CRDTs).
+TCC signifie que : (1) si une mise à jour a eu lieu avant une autre, elles 
+seront observées dans le même ordre (cohérence causal), et (2) les mises à jour 
+appartenant à une même transaction seront vues simultanément ou pas du tout.
+
+Dans AntidoteDB, la base de données est stockée sous la forme d’un journal 
+d’opération. 
+Dans l’implémentation actuelle le journal croit sans limite. 
+L’objectif principal de ce travail est d’écrire la spécification d’un mécanisme 
+de troncature du journal sûr, en effectuant des points de contrôles. 
+Cela permettra d’avoir des lectures plus rapides ainsi qu’une récupération de 
+données plus rapide.
+  }
 \RRabstract{
-  The geo-distributed database system Antidote persists its updates in a journal.
-  To recover after a crash, or to materialise a version of interest, requires to read and 
-  to (re-)execute all the corresponding operations from the journal from the initial state.
-  As a database ages, this takes longer and longer.
-  The aim of this research is to speed this up by adding a checkpointing mechanism.
-  Initialising from a recent checkpoint requires to re-execute only the operations after the
-  checkpoint, which can be much faster.
-  Once a full-system checkpoint exists, the preceding part of the log can be truncated if desired.
-  Journaling, materialising, checkpointing and journal truncation are well-known mech- anisms.
-  However, their interplay is known to be tricky; this will be even more challenging in Antidote, 
-  because of its complex geo-distributed and sharded structure, and because of its partially-ordered
-  consistency model.
-  The aim of this research is to specify rigorously, and to implement correctly and efficiently, 
-  a safe journaling, materialising, checkpointing and truncation mechanism for Antidote.
-  This includes the following partial objectives:
-  \begin{itemize}
-    \item To specify the structures of interest, i.e., distributed journal, materialization cache, 
-    and checkpoint store.
-    \item To specify the concepts of consistent cut, snapshot, object version, checkpoint, and to 
-    identify the consistent cuts that are important for correctness and performance.
-    \item To specify rigorously the invariants that link the above structures together.
-    \item To identify the actors of interest and their methods: transaction coordinator, version
-    cache, journal manager, checkpoint manager, etc.
-    \item To specify the pre-, post-, rely- and guarantee-conditions of these methods.
-    \item To implement (first in pseudocode, ultimately in running code) these methods.
-    \item To show that the implemented methods satisfy their specification.
-  \end{itemize}
+Large-scale application are typically built on top of geo-distributed
+databases running on multiple datacenters (DCs) situated around the
+globe.
+Network failures are unavoidable, but in most internet services,
+availability is not negotiable; in this context, the CAP theorem proves
+that it is impossible to provide both availability and strong
+consistency at the same time.
+Sacrificing strong consistency, exposes developers to complex anomalies
+that are complex to build against.
+
+AntidoteDB is a database designed for geo-replication.
+As it aims to provide high availability with the strongest possible
+consistency model, it guarantees Transactional Causal Consistency (TCC)
+and supports CRDTs.
+TCC means that: (1) if one update happens before another, they will be
+observed in the same order (causal consistency), and (2) updates in the
+same transaction are observed all-or-nothing.
+
+In AntidoteDB, the database is persisted as a journal of operations.
+In the current implementation, the journal grows without bound.
+The main objective of this work is to specify a mechanism for
+pruning the journal safely, by storing recent checkpoints.
+This will enable faster reads and crash recovery.
 } 
 %%
 \RRmotcle{base de données, point de contrôle, journal, spécification, cohérence}
@@ -185,7 +208,7 @@ concurrently at any DC under the Transactional Causal Consistency model.
 Antidote supports concurrent updates occurring in geo-distributed,
 highly-available DCs; each DC originates its own set of updates.
 In turn, a DC is partitioned into non-overlapping storage servers called
-shards, coordinated by Transaction Coordinators (fig: \ref{fig:architecture}).
+shards, coordinated by Transaction Coordinators (\emph{figure \ref{fig:architecture}}).
 Thus, the journal is not a single sequential data structure, but is
 logically the union of a number of sequential \emph{journal streams},
 one per shard per DC\@.
