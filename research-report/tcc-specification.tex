@@ -24,6 +24,7 @@
 \usepackage{RR}
 \usepackage{hyperref}
 \usepackage[all]{hypcap}
+%% \def\msquare{\mathord{\scalebox{1.5}[1]{\scalerel*{\Box}{\strut}}}}
 %%\usepackage[frenchb]{babel} % optionnel
 \RRNo{9355}
 %% \RTNo{0703}
@@ -117,7 +118,7 @@ Marc Shapiro%
 
 %%
 \begin{document}
-%%
+\RRNo{9355}
 \makeRR   
 
 \tableofcontents
@@ -550,6 +551,7 @@ These relations control the behavior of each shard (\textit{figure \ref{fig:syst
     monotonically to the right.
     As this happens, the causal precedence invariants, denoted
     $\le$, must be maintained.
+    To enforce $\le$ requires synchronization between the corresponding processes.
   }
   \label{fig:system-vts}
 \end{figure}
@@ -765,7 +767,7 @@ checkpoints too aggressively, as \emph{checkpointed}, the time of the
 oldest checkpoint, may not advance further than the \emph{dep} of any
 executing transaction.
 
-It guarantees to modify no more than the used bit of cache entry
+The guarantee clause guarantees to modify no more than the used bit of cache entry
 \emph{e}.
 
 \subsection{Filling the cache}
@@ -780,7 +782,7 @@ The guarantee clause of \emph{load} guarantees to not update memory outside of
 \emph{e}.
 Its rely clause assumes the environment does not overflow the cache nor update
 \emph{e} (other than the used bit).
-This may require concurrency control with \emph{inc}.
+This may require synchronization with \emph{inc}.
 
 The \emph{inc} method updates an existing cache entry \emph{e = (k,c)}
 with any updates from the journal more recent than \emph{c} up to some
@@ -862,7 +864,7 @@ record in the journal with no gaps.
 Next, recovery scans the Journal for transactions that have a record in the
 journal between Low Watermark and High Watermark, and put their IDs in a set
 called \textit{transactionIDs}.
-Two additional sets of transaction IDs are created, one for transactions with
+Then two additional sets of transaction IDs, one for transactions with
 a commit record, called \textit{committed}, and the second for transactions with
 a prepare record, called \textit{prepared}.
 
