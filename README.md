@@ -1,9 +1,3 @@
 # prototype-CDC
 
-Test interactive shell
-
-In one shell:
-python src/init.py
-
-In second shell:
-python src/tests.py
+Reference implementation of a Transactionally and Causally-Consistent(TCC) database.
