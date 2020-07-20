@@ -104,6 +104,8 @@ class Shard:
 
             elif messageType == "Abort":
                 log.asyncLog( trID , "Abort")
+            elif messageType == "NewParticipant":
+                todo("New participant message handling missing from shard")
 
             else :
                 assert False
