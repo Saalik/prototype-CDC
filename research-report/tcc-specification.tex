@@ -578,6 +578,7 @@ All records from a non-checkpointed transaction must have all records
 present in the journal.
 
 \section{Actors}
+
 \subsection{Transaction Manager}
 \label{sec:transaction-daemon}
 
@@ -666,6 +667,12 @@ If it is triggered by a system policy, then it sends a signal to the
 checkpoint daemon so that objects in the cache can be opportunistically
 checkpointed if needed.
 
+\begin{figure}[tp]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/interaction.png}
+  \caption{Interactions between the different actors}
+  \label{fig:interaction}
+\end{figure}
 
 \section{Cache}
 \label{sec:cache}
@@ -783,6 +790,13 @@ executing transaction.
 
 The guarantee clause guarantees to modify no more than the used bit of cache entry
 \emph{e}.
+
+\begin{figure}[tp]
+  \centering
+  \includegraphics[width=1\textwidth]{figures/readsd.png}
+  \caption{Sequence diagram of a Read}
+  \label{fig:read}
+\end{figure}
 
 \subsection{Filling the cache}
 \label{sec:cache-loading}
