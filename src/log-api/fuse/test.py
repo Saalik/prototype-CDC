@@ -13,11 +13,10 @@ if platform == "linux" or platform == "linux2":
 elif platform == "darwin":
     os.system("python3 myfuse.py LOCALDIR /Volumes/journal")
 else:
-    print("Windows is not supported")
+    print("Windows and else is not supported for the moment")
 
 
 os.system("python3 myfuse.py LOCALDIR /Volumes/journal")
 
-python3 myfuse.py /Users/saalik/OneDrive/PhD/code/prototype-CDC/src/log-api/fuse/journal /mnt/journal
 
 
