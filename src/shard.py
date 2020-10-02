@@ -1,3 +1,11 @@
+# Shard
+# 
+# Description: This class is the code for a single shard
+# Each shard handle their own Journal, High/Low Watermark,
+# Each shard is represented by a ShardID and the journal is
+# named using this id (journal+shardID) 
+
+
 import socket
 import twopc
 import select
@@ -13,8 +21,10 @@ from journal import getHigh
 from journal import append
 from record import Record
 
-
 class Shard:
+
+    # Initialisation of the shard
+    # Each shard is initalized with an id and a DCManager
 
     def __init__(self, id, dcManager):
         self.shardID = None
@@ -28,6 +38,12 @@ class Shard:
         #self.dcManager = dcManager
         #dcManager.testConnection("This is "+str(id))
         journal = "journal"+id
+
+        # Checking if a journal exist already
+        # If not a new journal is created 
+        # Low/HighWatermark are initialized accordingly
+        
+
         self.journal = journal.get()
         if not (journal == journal.empty()):
             self.recoveryInformation = recovery.recovery(journal)

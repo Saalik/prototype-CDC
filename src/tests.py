@@ -35,6 +35,7 @@ n = l.append(record)
 l.flush()
 assert l.get(n) == record
 assert l.get(lowWatermark-1) is None
+
 assert l.get(highWatermark+1) is None
 assert lowWatermark <= highWatermark
 

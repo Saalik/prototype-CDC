@@ -1,5 +1,5 @@
 """
-RainbowFS Log API with Fuse
+Based on RainbowFS Log API by Olivier Detour
 """
 
 import errno
@@ -34,15 +34,15 @@ def load_id(_path):
         _id = 0
 
     return _id
-
-
-class Logger(object):
-    """
-    RainbowFS Log API
-    """
+class Logger():
     def __init__(self, root_path=None):
         self._root_path = '/var/run/log' if root_path is None else root_path
 
+        """         
+        Loading id_low and id_high
+        And creating locks for updates 
+        Then sets id at id_high
+        """
         self._id_low = self._load_id_low()
         self._lock_id_low = threading.Lock()
 
@@ -56,6 +56,8 @@ class Logger(object):
                      self._id_low, self._id_high)
 
         for path in (
+            Volatile pas necessaire
+                
                 self.volatile_path,
                 self.committed_path,
         ):
@@ -64,6 +66,7 @@ class Logger(object):
             except OSError as exce:
                 if exce.errno != errno.EEXIST:
                     raise
+
 
     @property
     def volatile_path(self):
@@ -123,6 +126,8 @@ class Logger(object):
     def _flush_id_high(self):
         flush_id(self.id_high_path, self._id_high)
 
+
+    Remplacer ça par un flush uniquement
     def _commit(self, _id):
         logging.debug("commit %d", _id)
         os.rename(os.path.join(log_format(self.volatile_path) % _id),
@@ -152,7 +157,7 @@ class Logger(object):
 
         return _id
 
-    def truncate(self, _id=None):
+    def truncate(self, _id):
         """
         truncates logs from low_id to _id
         """
@@ -194,12 +199,12 @@ class Logger(object):
         try:
             with open(log_format(self.committed_path) % _id) as fdesc:
                 data = fdesc.read()
-
+        
             logging.info("got data %s for %d", data, _id)
         except (IOError, ValueError):
             data = None
-
             logging.info("no data for %d", _id)
+            throw (NotImplementedError)
 
         return data
 

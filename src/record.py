@@ -1,3 +1,7 @@
+# This class is the record dataclass.
+# If there are changes to the record structure they will be modified here.
+
+
 from dataclasses import dataclass
 from typing import Any
 import pprint
@@ -5,7 +9,6 @@ import time
 import sys
 
 acceptedMessageTypes = ["Begin","Update","Prepare","Commit","Abort"]
-
 
 @dataclass
 class Record:
@@ -19,6 +22,8 @@ class Record:
     commitTime: Any = None
 
     # self.acceptedMessageType = ["Begin","Update","Prepare","Commit","Abort"]
+    
+    # Setters 
 
     def setTimestamp(self):
         self.timestamp = int(round(time.time() * 1000))
@@ -27,6 +32,8 @@ class Record:
         assert messageType in acceptedMessageTypes
         self.messageType = messageType
     
+    # Utility function to create a journal entry from a record
+
     def toJournalEntry(self):
         entry = ""
         if self.timestamp == None:
@@ -55,6 +62,9 @@ class Record:
 
         return entry
 
+    # Utility function that takes a Journal entry and 
+    # intialize attributes 
+
     def fromEntry (self, entry):
         information = entry.split()
         self.timestamp = int(information.pop(0))
@@ -80,6 +90,10 @@ class Record:
             None
         else:
             assert False
+
+    # Each type of records have requiered information
+    # A call to this function checks for each type 
+    # if the required information is there
 
     def checkFormatCorrectness(self):
         if self.timestamp == None:
