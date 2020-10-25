@@ -1,0 +1,3 @@
+[submodule "src/checkpointStore/cloudserver"]
+	path = src/checkpointStore/cloudserver
+	url = https://github.com/scality/cloudserver.git
