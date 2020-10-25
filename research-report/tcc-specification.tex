@@ -438,17 +438,17 @@ Although the shard-to-shard connection is FIFO, the storage state of
 different shards in the same DC is not causally consistent.
 Without extra care, a transaction that reads from multiple shards might
 be unsafe.
-To avoid this, a transaction should of a shard is missing updates with
+To avoid this, a transaction should wait if a shard is missing updates with
 respect to another.
 
 The Cure protocol \cite{rep:pro:sh182} is what ensures the TCC properties.
 Cure has two main objectives:
 \begin{enumerate}%[(1)]
-\item To ensure that transactions in a DC commit atomically, and in a
+\item Ensure that transactions in a DC commit atomically, and in a
   total order across all shards of that DC\@.
   It uses the Clock-SI design for this purpose
-  \cite{rep:pan:1723}).
-\item To ensure that that updates are observed in a causally-consistent
+  \cite{rep:pan:1723}.
+\item Ensure that updates are observed in a causally-consistent
   order within a DC\@.
   To this effect, each shard continuously computes a safe lower bound
   for that DC, called its DC-Wide Causal Safe Point (DCSf).%
@@ -488,7 +488,7 @@ sequential representation, avoiding any concurrency-related metadata such as
 vector clocks or tombstones.
 The transitions between successive GCSt's can be explained as sequential
 updates.
-This makes the representation simpler and more compact and enable the 
+This makes the representation simpler and more compact and enables the 
 use of any sequential database as a checkpoint store.
 For instance, both Add-Wins and Remove-Wins sets reduce to classical
 sequential sets, and RGA reduces to a classical list.
@@ -508,7 +508,7 @@ times of finished transactions.
 
 Among those we single out those who are the most important.
 
-Min-Dependency represents the oldest snapshot any
+\textit{Min-Dependency} represents the oldest snapshot any
 running transaction is reading from. 
 Because a checkpoints is sequentially consistent, there should be 
 no in-flight transactions at Checkpoint-Time.
@@ -519,7 +519,7 @@ advances to the next Dependency.
 One issue is that while a transaction is running, Min-Dependency
 will not advance, and consequently checkpointing will be paused.
 
-Max-Committed is the last commit time recorded in the Journal.
+\textit{Max-Committed} is the last commit time recorded in the Journal.
 DCSf's advancement is bounded by Max-Committed, making sure that a new
 transaction does not read unsafe updates.
 Every time a transaction commits, its commit time become the new Max-Committed.
@@ -539,7 +539,7 @@ Records that precedes \emph{Low-Watermark} may be deleted and records that postd
 
 The overarching goal of this work is to have no perceivable loss of information,
 meaning that records that have not been checkpointed must not be deleted.
-Hence, our first invariant is $\mathit{Low} \le \mathit{Checkpoint Time}$.
+Hence, our first invariant is $\mathit{Low-Watermark} \le \mathit{Checkpoint Time}$.
 Checkpoints should be sequentially consistent and stable across all DCs.
 Hence, the invariants $\mathit{Checkpoint Time} \le
 \mathit{GCSt}$ and $\mathit{Checkpoint Time} \le \textit{Min-Dependency}$.
@@ -572,7 +572,7 @@ These relations control the behavior of each shard (\textit{figure \ref{fig:syst
 
 At the Journal level there are several invariants that are necessary to ensure that
 no data is lost.
-First if a Checkpoint exist there should be a \textit{Checkpoint} record present in
+First, if a Checkpoint exists there should be a \textit{Checkpoint} record present in
 the Journal.
 All records from a non-checkpointed transaction must have all records 
 present in the journal.
@@ -759,7 +759,7 @@ descriptor \emph{e} in the cache.%
 }
 %
 It must have the same key \emph{k}, and a commit time \emph{c} that
-satisfies the dependency, i.e., such that \emph{c $\le$ dep} and there
+satisfies the dependency, \textit{i.e.}, such that \emph{c $\le$ dep} and there
 are no invalidating updates \emph{dep $\le$ v}, where \emph{v} is
 \emph{e}'s validity timestamp.
 The cache entry must be significant (presence bit \emph{p}) and this
@@ -870,7 +870,7 @@ invariants are true.
 When recovery is complete the following is true at each shard:
 \begin{itemize}
   \item Time of the last checkpoint is known
-  \item Low Watermark and High Watermark are set
+  \item Low-Watermark and High-Watermark are set
   \item Every Transaction that has a prepare record in each participating shard also
   has a commit record in each corresponding Journal.
   \item Every Transaction that is missing a prepare record has an abort message 
@@ -878,7 +878,7 @@ When recovery is complete the following is true at each shard:
 \end{itemize}
 
 Recovery proceeds as follows. 
-First the Journal is read to find the last checkpoint record that has been written
+First, the Journal is read to find the last checkpoint record that has been written
 to the log and set the Checkpoint Time.
 Using the Checkpoint Time, and the fact that every committed transaction that is 
 not part of the last checkpoint must be complete in Journal.
@@ -886,11 +886,11 @@ Low Watermark is initialized with the Log Sequence Number (LSN) of the first
 \textit{Begin} record that comes after the Checkpoint Time. 
 % This invariant needs to be added to the journal invariants
 % The journal always contains a Checkpoint record if one exist
-The High Watermark is then initialized with the LSN of the last complete 
+The High-Watermark is then initialized with the LSN of the last complete 
 record in the journal with no gaps.
 
 Next, recovery scans the Journal for transactions that have a record in the
-journal between Low Watermark and High Watermark, and put their IDs in a set
+journal between Low-Watermark and High-Watermark, and put their IDs in a set
 called \textit{transactionIDs}.
 Then two additional sets of transaction IDs, one for transactions with
 a commit record, called \textit{committed}, and the second for transactions with
