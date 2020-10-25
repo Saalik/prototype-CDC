@@ -4,9 +4,10 @@ import logging
 import sys
 import datetime
 import time
-from record import Record
 
-from rainbowfs.logger import Logger
+sys.path.insert(1, '..')
+from record import Record
+from logger.logger import Logger
 
 journal = logging.getLogger()
 journal.setLevel(logging.INFO)
@@ -17,13 +18,19 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 ch.setFormatter(formatter)
 
-l = Logger('journal')
+l = Logger('../journal')
 
 current_time = lambda: int(round(time.time() * 1000))
 
 trId = 0
 
 fmt = '%d %s %s %s %s'
+
+print("Starting log")
+
+userInput = input("Do you wish to reset data ? y/N")
+if userInput == "y":
+    os.system("rm -r journal/")   
 
 lowWatermark = l.id_low
 highWatermark = l.id_high

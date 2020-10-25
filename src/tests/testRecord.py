@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
-from record import Record
 import time
+import sys
+
+sys.path.insert(1, '..')
+
+from record import Record
 
 current_time = lambda: int(round(time.time() * 1000))
 

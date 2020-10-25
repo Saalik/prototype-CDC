@@ -1,9 +1,9 @@
 import logging
-import sys
 import datetime
 import time
-sys.path.insert(1, 'log-api')
-from rainbowfs.logger import Logger
+import sys
+
+from logger.logger import Logger
 from utile import todo
 from record import Record
 
