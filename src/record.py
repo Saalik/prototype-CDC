@@ -10,8 +10,8 @@ acceptedMessageTypes = ["Begin","Update","Prepare","Commit","Abort"]
 @dataclass
 class Record:
     timestamp: int = None
-    messageType: str = None
     transactionID: int = None
+    messageType: str = None
     key: str = None
     operation: str = None
     dependency: int = None
