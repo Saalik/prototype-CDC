@@ -7,23 +7,36 @@ sys.path.insert(1, '..')
 from journal import getLow, getHigh, append, flush, get, getRange
 from record import Record
 
-print(getLow())
-print(getHigh())
+
+print("This is a test of src/journal.py")
+print("Checks the values of LowWatermark and HighWatermark")
+print("Creates a record and checks the format correctness using record.py")
+print("Append the record to the journal")
+print("The record is then flushed")
+
+
+print("LowWatermark is "+ str(getLow()) )
+print("HighWatermark is "+ str(getHigh()) )
+print("Creating the record")
 rec = Record(transactionID= 1, messageType="Begin", key=1, operation= "inc")
-print(rec.checkFormatCorrectness())
-rec.key = None
-rec.operation = None
-rec.dependency = 22
-rec.setTimestamp()
-print(rec.checkFormatCorrectness())
+print(rec)
+print("Format correctness: "+str(rec.checkFormatCorrectness())+"\n")
+# rec.key = None
+# rec.operation = None
+# rec.dependency = 22
+# rec.setTimestamp()
+# print(rec.checkFormatCorrectness())
 
 id = append(rec)
-print(id)
-print(getHigh())
+print("Appending the record : "+str(id))
+print("Checking High before flush " + str(getHigh()))
 flush()
-print(getHigh())
+print("Checking High after flush " +str(getHigh()))
+print("Retrieving record from the journal")
 readRec = get(id)
-assert rec == readRec
+readsec = get(id+1)
+print("Reading the high" + )
+print("Checking if retrieved record matches written record")
+print("WrittenRec == ReadRecord : " + str(rec == readRec))
 
-getRange(getHigh(), getLow())
 
