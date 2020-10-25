@@ -43,7 +43,7 @@ def recovery(journal):
     for record in journal:
         highWatermark = record.LogSequenceNumber
         assert highWatermark == record.LogSequenceNumber
-    assert highWatermark > -1
+    assert highWatermark != initValue
 
     # We read all the records to find a checkpoint record
     # Everytime we find a record of a checkpoint we record the time
@@ -146,7 +146,7 @@ def recovery(journal):
         if record.getOperation() == "Prepare" and record.getTransactionID() in transactionsWithoutCommit:
             transactionID = record.getTransactionID()
             listOfParticipants = record.getParticipants
-            trWithoutCommitAndParticipants[tranactransactionID] = listOfParticipants
+            trWithoutCommitAndParticipants[transactionID] = listOfParticipants
     
     return {lowWatermark, highWatermark, checkpointTime, 
     transactionsToAbort, trWithoutCommitAndParticipants}

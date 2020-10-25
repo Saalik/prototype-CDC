@@ -23,7 +23,7 @@ class Manager:
         for i in range(int(numberOfShard)):
             createdShard = Shard(i)
             self.listOfRecoveryInformation[i] = createdShard.recoveryInformation
-            self.listOfShard[i]= createdShard
+            self.listOfShard[i] = createdShard
 
         # Handle the answers from the recovery
         self.setOfTransactionsToAbort = set()
