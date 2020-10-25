@@ -6,7 +6,6 @@ import datetime
 import time
 from record import Record
 
-sys.path.insert(1, 'log-api')
 from rainbowfs.logger import Logger
 
 journal = logging.getLogger()
