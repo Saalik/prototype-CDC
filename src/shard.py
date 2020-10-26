@@ -15,7 +15,6 @@ from record import Record
 
 
 class Shard:
-
     def __init__(self, id, dcManager):
         self.shardID = None
         self.journal = None
@@ -24,16 +23,16 @@ class Shard:
         self.lowWatermark = None
         self._lock = threading.Lock()
         self.shardID = id
-        #print("Shard "+str(id)+" starting intialization")
-        #self.dcManager = dcManager
-        #dcManager.testConnection("This is "+str(id))
-        journal = "journal"+id
+        # print("Shard "+str(id)+" starting intialization")
+        # self.dcManager = dcManager
+        # dcManager.testConnection("This is "+str(id))
+        journal = "journal" + id
         self.journal = journal.get()
         if not (journal == journal.empty()):
             self.recoveryInformation = recovery.recovery(journal)
             self.highWatermark = self.recoveryInformation.highWatermark
             self.lowWatermark = self.recoveryInformation.lowWatermark
-        else :
+        else:
             self.highWatermark = 0
             self.lowWatermark = 0
 
@@ -67,9 +66,14 @@ class Shard:
             elif messageType == "Update":
                 key = msgRecv[2]
                 operation = msgRecv[3]
-                dependency = msgRecv[4]    
-                record = Record(transactionID=trID, messageType="Update", key= key, 
-                operation= operation, dependency = dependency)
+                dependency = msgRecv[4]
+                record = Record(
+                    transactionID=trID,
+                    messageType="Update",
+                    key=key,
+                    operation=operation,
+                    dependency=dependency,
+                )
                 append(record)
 
             elif messageType == "Read":
@@ -82,40 +86,37 @@ class Shard:
                 coordinator.send(message)
 
             elif messageType == "Prepare":
-                # Parsing the rest of the message 
+                # Parsing the rest of the message
                 listOfParticipants = msgRecv[2]
                 dependency = msgRecv[3]
 
-                lsn = log.syncLog( trID , "Prepare",
-                dependency, listOfParticipants )
+                lsn = log.syncLog(trID, "Prepare", dependency, listOfParticipants)
                 if lsn:
                     updateHigh()
-                    acceptMessage = ( self.shardID, trID, "Accept" )
+                    acceptMessage = (self.shardID, trID, "Accept")
                     coordinator.send(acceptMessage)
                 else:
-                    abortMessage = (self.shardID, trID, "Abort" )
+                    abortMessage = (self.shardID, trID, "Abort")
                     coordinator.send(abortMessage)
-                
+
             elif messageType == "Commit":
                 commitTime = msgRecv[2]
                 dependency = msgRecv[3]
-                lsn = log.asyncLog( trID , "Commit", commitTime )
-
+                lsn = log.asyncLog(trID, "Commit", commitTime)
 
             elif messageType == "Abort":
-                log.asyncLog( trID , "Abort")
+                log.asyncLog(trID, "Abort")
             elif messageType == "NewParticipant":
                 todo("New participant message handling missing from shard")
 
-            else :
+            else:
                 assert False
- 
 
     def updateHigh():
         newValue = getHigh()
         assert lowWatermark <= highWatermark
         with self._lock:
-            if (self.highWatermark < newValue):
+            if self.highWatermark < newValue:
                 self.highWatermark = newValue
         assert lowWatermark <= highWatermark
 
@@ -127,12 +128,11 @@ class Shard:
                 self.lowWatermark = newValue
         assert lowWatermark <= highWatermark
 
-    
-        
+
 # Message format expected for an update
 # # { TransactionID, Type, Key, operation, Dependency }
-# Record Format 
-# # { Log Sequence Number,Transaction ID, Clock, Key, Operation, Dependency} 
+# Record Format
+# # { Log Sequence Number,Transaction ID, Clock, Key, Operation, Dependency}
 
 # Message format expected for a read
 # # {TransactionID, Type, Key, None, Dependency }

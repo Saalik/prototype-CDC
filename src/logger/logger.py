@@ -12,14 +12,14 @@ def log_format(_path):
     """
     Normalize log file format
     """
-    return os.path.join(_path, '%016d')
+    return os.path.join(_path, "%016d")
 
 
 def flush_id(_path, _id):
     """
     flush _id to _path
     """
-    with open(_path, 'w') as fdesc:
+    with open(_path, "w") as fdesc:
         fdesc.write(str(_id))
 
 
@@ -28,7 +28,7 @@ def load_id(_path):
     load an id from _path
     """
     try:
-        with open(_path, 'r') as fdesc:
+        with open(_path, "r") as fdesc:
             _id = int(fdesc.read())
 
     except (IOError, ValueError):
@@ -41,8 +41,9 @@ class Logger(object):
     """
     RainbowFS Log API
     """
+
     def __init__(self, root_path=None):
-        self._root_path = '/var/run/log' if root_path is None else root_path
+        self._root_path = "/var/run/log" if root_path is None else root_path
 
         self._id_low = self._load_id_low()
         self._lock_id_low = threading.Lock()
@@ -53,12 +54,11 @@ class Logger(object):
         self._id = self._id_high
         self._lock_id = threading.Lock()
 
-        logging.info("Start log store: (low %d, high %d)",
-                     self._id_low, self._id_high)
+        logging.info("Start log store: (low %d, high %d)", self._id_low, self._id_high)
 
         for path in (
-                self.volatile_path,
-                self.committed_path,
+            self.volatile_path,
+            self.committed_path,
         ):
             try:
                 os.makedirs(path)
@@ -71,21 +71,21 @@ class Logger(object):
         """
         volatile_path getter
         """
-        return os.path.join(self._root_path, 'volatile')
+        return os.path.join(self._root_path, "volatile")
 
     @property
     def committed_path(self):
         """
         committed_path getter
         """
-        return os.path.join(self._root_path, 'committed')
+        return os.path.join(self._root_path, "committed")
 
     @property
     def id_low_path(self):
         """
         id_low_path getter
         """
-        return os.path.join(self._root_path, 'id_low')
+        return os.path.join(self._root_path, "id_low")
 
     @property
     def id_low(self):
@@ -107,7 +107,7 @@ class Logger(object):
         """
         id_high_path getter
         """
-        return os.path.join(self._root_path, 'id_high')
+        return os.path.join(self._root_path, "id_high")
 
     @property
     def id_high(self):
@@ -126,8 +126,10 @@ class Logger(object):
 
     def _commit(self, _id):
         logging.debug("commit %d", _id)
-        os.rename(os.path.join(log_format(self.volatile_path) % _id),
-                  os.path.join(log_format(self.committed_path) % _id))
+        os.rename(
+            os.path.join(log_format(self.volatile_path) % _id),
+            os.path.join(log_format(self.committed_path) % _id),
+        )
 
     def _delete(self, _id):
         logging.debug("delete %d", _id)
@@ -181,7 +183,7 @@ class Logger(object):
             _id = self._id
             self._id += 1
 
-        with open(log_format(self.volatile_path) % _id, 'w') as fdesc:
+        with open(log_format(self.volatile_path) % _id, "w") as fdesc:
             fdesc.write(data)
 
         logging.info("append data %s for %d", data, _id)

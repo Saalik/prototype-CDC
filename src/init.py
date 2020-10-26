@@ -6,4 +6,4 @@ print("Starting log")
 
 userInput = input("Do you wish to reset data ? ")
 if userInput == "y":
-    os.system("rm -r journal/")    
+    os.system("rm -r journal/")

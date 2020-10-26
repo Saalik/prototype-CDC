@@ -12,4 +12,4 @@ s3 = boto3.client(
 
 s3.create_bucket(Bucket="seau")
 print("The current buckets list:")
-pprint.PrettyPrinter(indent=2).pprint(s3.list_buckets()['Buckets'])
+pprint.PrettyPrinter(indent=2).pprint(s3.list_buckets()["Buckets"])

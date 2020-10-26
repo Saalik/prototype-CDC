@@ -2,7 +2,8 @@
 # Explain the problem
 # Problem: When we want to truncate the log we need to ensure
 # that no information is lost while checkpointing
-# 
+#
+
 
 def truncate(journal):
 
@@ -13,9 +14,8 @@ def truncate(journal):
     # in the log
     committed = {}
 
-
     # This loop reads all the records in the journal and save the transactionID
-    # of all the transactions that have a prepare message preceding the last 
+    # of all the transactions that have a prepare message preceding the last
     # checkpoint
 
     for record in journal:
@@ -24,7 +24,7 @@ def truncate(journal):
             # donc toutes les transactions terminées sont complètes
             if record.getType() == "System" and record.getOperation() == "Commit":
                 committed.add(record.getTransactionID())
-        else :
+        else:
             # record.getTimestamp() >= checkpointTime
             break
 
@@ -39,4 +39,4 @@ def truncate(journal):
             lowWatermark = record.getlogSequenceNumber()
             break
 
-    #Assert New lowWatermark >= old lowWatermark    
+    # Assert New lowWatermark >= old lowWatermark

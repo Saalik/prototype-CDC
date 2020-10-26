@@ -6,13 +6,13 @@ import datetime
 import time
 import os
 
-sys.path.insert(1, '..')
+sys.path.insert(1, "..")
 from record import Record
 from logger.logger import Logger
 
 userInput = input("Do you wish to reset data ? y/N\n")
 if userInput == "y":
-    os.system("rm -r ../journal/")   
+    os.system("rm -r ../journal/")
 
 journal = logging.getLogger()
 journal.setLevel(logging.INFO)
@@ -20,16 +20,16 @@ journal.setLevel(logging.INFO)
 ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(message)s")
 ch.setFormatter(formatter)
 
-l = Logger('../journal')
+l = Logger("../journal")
 
 current_time = lambda: int(round(time.time() * 1000))
 
 trId = 0
 
-fmt = '%d %s %s %s %s'
+fmt = "%d %s %s %s %s"
 
 print("Starting log")
 
@@ -41,8 +41,8 @@ n = l.append(record)
 
 l.flush()
 assert l.get(n) == record
-assert l.get(lowWatermark-1) is None
-assert l.get(highWatermark+1) is None
+assert l.get(lowWatermark - 1) is None
+assert l.get(highWatermark + 1) is None
 assert lowWatermark <= highWatermark
 
 for i in range(lowWatermark, highWatermark):
@@ -71,7 +71,7 @@ if userInput == "y":
 
     while True:
 
-        try: 
+        try:
             userInput = input()
         except EOFError:
             break
@@ -84,16 +84,21 @@ if userInput == "y":
         elif command[0] == "high":
             print(l.id_high)
         elif command[0] == "get":
-            try: 
+            try:
                 int(command[1])
             except ValueError:
-                print(command[1]+" is not a valid option")
+                print(command[1] + " is not a valid option")
             record = l.get(int(command[1]))
             print(record)
         elif command[0] == "append":
             if len(command) >= 4:
-                record = fmt % (current_time(), command[1], command[2], command[3], 
-                command[4] if len(command) == 5 else "None")
+                record = fmt % (
+                    current_time(),
+                    command[1],
+                    command[2],
+                    command[3],
+                    command[4] if len(command) == 5 else "None",
+                )
                 l.append(record)
                 if command[2] == "prepare":
                     l.flush()

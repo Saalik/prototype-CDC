@@ -4,7 +4,7 @@ import pprint
 import time
 import sys
 
-acceptedMessageTypes = ["Begin","Update","Prepare","Commit","Abort"]
+acceptedMessageTypes = ["Begin", "Update", "Prepare", "Commit", "Abort"]
 
 
 @dataclass
@@ -22,17 +22,17 @@ class Record:
 
     def setTimestamp(self):
         self.timestamp = int(round(time.time() * 1000))
-    
+
     def setMessageType(self, messageType):
         assert messageType in acceptedMessageTypes
         self.messageType = messageType
-    
+
     def toJournalEntry(self):
         entry = ""
         if self.timestamp == None:
             self.timestamp = int(round(time.time() * 1000))
         entry = entry + str(self.timestamp)
-        
+
         if self.transactionID == None:
             sys.stderr.write("No transactionID in record, quitting \n")
             assert False
@@ -55,7 +55,7 @@ class Record:
 
         return entry
 
-    def fromEntry (self, entry):
+    def fromEntry(self, entry):
         information = entry.split()
         self.timestamp = int(information.pop(0))
         self.transactionID = int(information.pop(0))
@@ -64,11 +64,11 @@ class Record:
 
         if self.messageType == "Begin":
             self.dependency = int(information.pop(0))
-        
+
         elif self.messageType == "Update":
             self.key = information.pop(0)
             self.operation = information.pop(0)
-        
+
         elif self.messageType == "Prepare":
             self.dependency = information.pop(0)
             self.listOfParticipants = information.pop(0)
@@ -88,19 +88,19 @@ class Record:
             return False
         if self.messageType == None:
             return False
-        
+
         if self.messageType == "Begin":
             if self.dependency == None:
                 return False
             else:
                 return True
-        
+
         elif self.messageType == "Update":
             if self.key == None or self.operation == None:
                 return False
             else:
                 return True
-        
+
         elif self.messageType == "Prepare":
             if self.dependency == None or self.listOfParticipants == None:
                 return False
@@ -112,11 +112,9 @@ class Record:
                 return False
             else:
                 return True
-        
+
         elif self.messageType == "Abort":
             return True
-        
+
         else:
             return False
-
-

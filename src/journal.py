@@ -13,24 +13,27 @@ journal.setLevel(logging.INFO)
 ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(message)s")
 ch.setFormatter(formatter)
 
-log = Logger('journal')
+log = Logger("journal")
 
 current_time = lambda: int(round(time.time() * 1000))
 
-fmt = '%d %s %s %s %s'
+fmt = "%d %s %s %s %s"
 
 lowWatermark = lambda: log.id_low
 highWatermark = lambda: log.id_high
 assert lowWatermark() <= highWatermark()
 
+
 def getLow():
     return lowWatermark()
 
+
 def getHigh():
     return highWatermark()
+
 
 def append(record, sync=False):
     record.setTimestamp()
@@ -38,6 +41,7 @@ def append(record, sync=False):
     if sync == True:
         log.flush()
     return id
+
 
 def flush():
     log.flush()
@@ -47,11 +51,10 @@ def flush():
     #     record.messageType, record.dependency, None)
     #     log.append(entry)
 
-    # elif record.messageType == "Update": 
+    # elif record.messageType == "Update":
     #     entry = fmt % (current_time(), record.transactionID,
     #     record.messageType, )
     #     log.asyncLog( transactionID, "Update", clock(), key, operation, None )
-    
 
     # elif record.messageType == "Read":
     #     key = msgRecv[2]
@@ -63,7 +66,7 @@ def flush():
     #     coordinator.send(message)
 
     # elif record.messageType == "Prepare":
-    #     # Parsing the rest of the message 
+    #     # Parsing the rest of the message
     #     listOfParticipants = msgRecv[2]
     #     dependency = msgRecv[3]
 
@@ -76,12 +79,11 @@ def flush():
     #     else:
     #         abortMessage = (self.shardID, transactionID, "Abort", clock() )
     #         coordinator.send(abortMessage)
-        
+
     # elif record.messageType == "Commit":
     #     commitTime = msgRecv[2]
     #     dependency = msgRecv[3]
     #     lsn = log.asyncLog( transactionID , "Commit", commitTime )
-
 
     # elif record.messageType == "Abort":
     #     log.asyncLog( transactionID , "Abort", clock())
@@ -89,6 +91,7 @@ def flush():
     # else :
     #     assert False
     # return None
+
 
 def get(id):
     assert id > lowWatermark()
@@ -98,10 +101,11 @@ def get(id):
     record.fromEntry(entry)
     return record
 
-def getRange(firstID, lastID):    
+
+def getRange(firstID, lastID):
 
     listOfRecords = []
-    for i in range (firstID,lastID+1):
+    for i in range(firstID, lastID + 1):
         entry = log.get(i)
         record = Record()
         record.fromEntry(entry)
@@ -109,13 +113,15 @@ def getRange(firstID, lastID):
         listOfRecords.append(record)
     return listOfRecords
 
+
 def truncate():
     todo("Implementation TBD \n Implemented on in lower level")
+
 
 def getByKey(key):
     todo("Work in progress\n No commit check")
     listOfRecords = []
-    for i in range (firstID,lastID+1):
+    for i in range(firstID, lastID + 1):
         entry = log.get(i)
         record = Record()
         record.fromEntry(entry)
