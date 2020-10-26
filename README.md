@@ -27,9 +27,10 @@ git clone --recurse-submodules -b s3 https://github.com/Saalik/prototype-CDC.git
 #### Tests
 
 ```sh
-./src/tests/testMain.py
-./src/tests/testRecord.py
-./src/tests/testCheckpoint.py
+cd src/tests/
+./testMain.py
+./testRecord.py
+./testCheckpoint.py
 ```
 
 ### Before starting to code
