@@ -16,7 +16,7 @@ In development
 https://classic.yarnpkg.com/en/docs/install/
 
 
-### Test the current working features ###
+### Test the currently working features ###
 #### Download 
 
 ```sh
@@ -35,6 +35,11 @@ cd src/tests/
 
 ### Before starting to code
 
+We need something to play the role of an [Amazon S3](
+https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) endpoint.
+[Zenko](https://www.zenko.io/) will play that role.  
+
+The following commands will launch a new Zenko instance.
 
 ```sh
 cd src/checkpointStore/cloudserver
