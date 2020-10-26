@@ -4,10 +4,15 @@ import logging
 import sys
 import datetime
 import time
+import os
 
 sys.path.insert(1, '..')
 from record import Record
 from logger.logger import Logger
+
+userInput = input("Do you wish to reset data ? y/N\n")
+if userInput == "y":
+    os.system("rm -r ../journal/")   
 
 journal = logging.getLogger()
 journal.setLevel(logging.INFO)
@@ -28,10 +33,6 @@ fmt = '%d %s %s %s %s'
 
 print("Starting log")
 
-userInput = input("Do you wish to reset data ? y/N")
-if userInput == "y":
-    os.system("rm -r journal/")   
-
 lowWatermark = l.id_low
 highWatermark = l.id_high
 assert lowWatermark <= highWatermark
@@ -49,7 +50,7 @@ for i in range(lowWatermark, highWatermark):
 
 userInput = input("Do you wish to launch interactive mode? y/N ")
 if userInput == "y":
-    print("Type command in the following format:")
+    print("\nHow to use the journal :\n")
     print("Get the high watermark")
     print("high")
     print()
@@ -65,6 +66,8 @@ if userInput == "y":
     print("Get record ")
     print("get recordID")
     print()
+    print("Exit")
+    print("exit")
 
     while True:
         userInput = input()
@@ -94,5 +97,9 @@ if userInput == "y":
             print("Records flushed")
         elif command[0] == "truncate":
             l.truncate(lowWatermark)
+        elif command[0] == "exit":
+            break
         else:
             print("Wrong format")
+
+print("Test ended")
