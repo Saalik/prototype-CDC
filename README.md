@@ -1,3 +1,16 @@
-# prototype-CDC
+# README #
 
-Reference implementation of a Transactionally and Causally-Consistent(TCC) database.
+### What is this repository for? ###
+
+* Quick summary
+Prototype for the RainbowFS project.
+
+* Version
+In developpement
+
+
+### Test the current working features ###
+```sh
+./tests.py
+```
+
