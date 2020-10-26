@@ -46,6 +46,7 @@ The following commands will launch a new Zenko instance.
 ```sh
 cd src/checkpointStore/cloudserver
 yarn install --frozen-lockfile
+yarn install
 # Start a Zenko CloudServer 
 yarn start
 ```
