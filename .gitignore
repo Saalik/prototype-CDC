@@ -477,3 +477,4 @@ src/log-api/rainbowfs/__pycache__/
 src/journal/volatile/0000000000000001
 src/log-api/rainbowfs/__pycache__/__init__.cpython-37.pyc
 src/log-api/rainbowfs/__pycache__/logger.cpython-37.pyc
+.vscode/launch.json
