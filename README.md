@@ -30,7 +30,7 @@ git clone --recurse-submodules -b s3 https://github.com/Saalik/prototype-CDC.git
 cd src/tests/
 ./testMain.py
 ./testRecord.py
-./testCheckpoint.py
+./testJournal.py
 ```
 
 ### Before starting to code
@@ -43,7 +43,7 @@ yarn install --frozen-lockfile
 yarn start
 ```
 
-### Ressource
+### Resource
 
 https://github.com/scality/cloudserver
 https://boto3.amazonaws.com/v1/documentation/api/latest/index.html
