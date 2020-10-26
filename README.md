@@ -26,6 +26,8 @@ git clone --recurse-submodules -b s3 https://github.com/Saalik/prototype-CDC.git
 
 #### Tests
 
+The repository contains some already working tests. You can launch them from the `src/tests` subdirectory.
+
 ```sh
 cd src/tests/
 ./testMain.py
@@ -50,12 +52,15 @@ yarn start
 
 ### Resource
 
-https://github.com/scality/cloudserver
-https://boto3.amazonaws.com/v1/documentation/api/latest/index.html
+[Zenko CloudServer sources](https://github.com/scality/cloudserver)
+[Amazon S3 Python SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 
 
 ### For the hackathon
 
-- First task : Create a Journal population script
-- Second task : Write a test to ensure S3 is working. Creation of a bucket, write information.
-- Third task : Start writing the checkpoint.py code. Reading information from the journal and writing to CloudServer. Retrieve object from CloudServer
+- First task :  Create a script to populate the journal 
+- Second task : Write a test to ensure that the S3 interface is working. Create a bucket, write some values
+- Third task : Create a checkpoint.py script that
+    - Retrieves information from the journal
+    - Write them to Zenko CloudServer 
+    - Retrieve the object from CloudServer
