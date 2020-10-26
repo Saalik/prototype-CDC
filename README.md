@@ -51,10 +51,15 @@ yarn install
 yarn start
 ```
 
-### Resource
+We will also be using boto3 to communicate with S3.
+```sh
+pip3 install -r src/requirements.txt
+```
 
-[Zenko CloudServer sources](https://github.com/scality/cloudserver)
-[Amazon S3 Python SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+### Resources
+
+- [Zenko CloudServer sources](https://github.com/scality/cloudserver)
+- [Amazon S3 Python SDK](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 
 
 ### For the hackathon
