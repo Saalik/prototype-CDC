@@ -70,7 +70,12 @@ if userInput == "y":
     print("exit")
 
     while True:
-        userInput = input()
+
+        try: 
+            userInput = input()
+        except EOFError:
+            break
+
         command = userInput.split()
         if not command:
             continue
